@@ -2,17 +2,6 @@ from rest_framework import serializers
 from .models import Client, Document, Payment, Refund, Mother, Father, Contact, Child
 
 
-# class CountrySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Country
-#         fields = ['id', 'name_country']
-
-
-# class StatusSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Status
-#         fields = ['id', 'name']
-
 
 class DocumentSerializer(serializers.ModelSerializer):
 
@@ -41,12 +30,6 @@ class PaymentSerializer(serializers.ModelSerializer):
         validated_data['client'] = client
         return super().create(validated_data)
 
-
-# class RefundSerializer(serializers.ModelSerializer):
-
-#     class Meta:
-#         model = Refund
-#         fields = ['id', 'amount', 'title', 'uploaded_at']
 
 class RefundSerializer(serializers.ModelSerializer):
     class Meta:

@@ -14,51 +14,9 @@ from .authentication import CsrfExemptSessionAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ClientFilter
 
-class LargePagePagination(PageNumberPagination):
-    page_size = 5
-    page_size_query_param = 'page_size'  # Разрешаем клиентам изменять размер страницы ?page_size=100
-    max_page_size = 100
-
-# class CustomPageNumberPagination(PageNumberPagination):
-#     page_size = 1  # Измените это значение по необходимости
-#     page_size_query_param = 'page_size'  # Разрешаем клиентам изменять размер страницы ?page_size=100
-#     max_page_size = 100
-
-#     def get_next_link(self):
-#         if not self.page.has_next():
-#             return None
-#         url = self.request.build_absolute_uri()
-#         page_number = self.page.next_page_number()
-#         return self.replace_query_param(url, self.page_query_param, page_number)
-
-#     def get_previous_link(self):
-#         if not self.page.has_previous():
-#             return None
-#         url = self.request.build_absolute_uri()
-#         page_number = self.page.previous_page_number()
-#         return self.replace_query_param(url, self.page_query_param, page_number)
-
-#     def replace_query_param(self, url, key, val):
-#         from urllib.parse import urlencode
-
-#         query_dict = self.request.GET.copy()
-#         query_dict[key] = val
-#         return f'{self.request.path}?{urlencode(query_dict)}'
-
-#     def get_paginated_response(self, data):
-#         return Response({
-#             'links': {
-#                 'self': self.request.build_absolute_uri().replace('?page=1', '').replace('&page=1', ''),
-#                 'next': self.get_next_link(),
-#                 'previous': self.get_previous_link()
-#             },
-#             'count': self.page.paginator.count,
-#             'results': data
-#         })
-
 
 class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 1 # Измените это значение по необходимости
+    page_size = 2 # Измените это значение по необходимости
     page_size_query_param = 'page_size'  # Разрешаем клиентам изменять размер страницы ?page_size=100
     max_page_size = 100
 

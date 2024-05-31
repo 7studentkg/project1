@@ -17,7 +17,6 @@ router.register(r'client/(?P<client_id>\d+)/refunds', RefundViewSet, basename='c
 # refund_detail = RefundViewSet.as_view({
 #     'get': 'retrieve',
 #     'put': 'update',
-#     'patch': 'partial_update',
 #     'delete': 'destroy'
 # })
 
