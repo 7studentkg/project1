@@ -1,12 +1,9 @@
-from django.shortcuts import get_object_or_404, render
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import Client, Document, Payment, Refund
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 from .serializers import ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer
-from rest_framework.views import APIView
 from rest_framework import viewsets
-from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -52,32 +49,6 @@ class ClientList(ListAPIView):
             queryset = queryset.filter(firstName__icontains=country)
 
         return queryset
-
-
-
-
-
-# import logging
-
-# logger = logging.getLogger(__name__)
-
-
-
-# class SearchClientByCountryView(ListAPIView):
-#     queryset = Client.objects.all()
-#     serializer_class = ClientSerializer
-#     pagination_class = LargePagePagination
-#     filter_backends = [DjangoFilterBackend]
-#     filterset_class = ClientFilteCountry
-
-
-
-# class SearchClientByStatusView(ListAPIView):
-#     queryset = Client.objects.all()
-#     serializer_class = ClientSerializer
-#     pagination_class = LargePagePagination
-#     filter_backends = [DjangoFilterBackend]
-#     filterset_class = ClientFilteStatus
 
 
 # POST
@@ -131,16 +102,3 @@ class RefundViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         client_id = self.kwargs['client_id']
         serializer.save(client_id=client_id)
-
-
-class ClientSearchView(APIView):
-    def get(self, request):
-        query = request.query_params.get('query', '')
-        if query:
-            clients = Client.objects.filter(
-                Q(surname__istartswith=query) | Q(firstname__istartswith=query)
-            )
-        else:
-            clients = Client.objects.all()
-        serializer = ClientSerializer(clients, many=True)
-        return Response(serializer.data)
