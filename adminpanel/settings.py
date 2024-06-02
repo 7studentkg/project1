@@ -9,6 +9,9 @@ import sys
 if hasattr(sys, 'setdefaultencoding'):
     sys.setdefaultencoding('utf-8')
 
+# settings.py
+DEFAULT_CHARSET = 'utf-8'
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -71,7 +74,6 @@ INSTALLED_APPS = [
     'django_filters',
 
 ]
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -138,7 +140,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-ru'
 
 # TIME_ZONE = 'UTC'
 TIME_ZONE = 'Asia/Bishkek'

@@ -1,21 +1,43 @@
-from rest_framework import serializers
 from .models import Client, Document, Payment, Refund, Mother, Father, Contact, Child
+from rest_framework import serializers
 
 
+class DocumentFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ['id', 'file']
 
 class DocumentSerializer(serializers.ModelSerializer):
+    files = serializers.SerializerMethodField()
 
     class Meta:
         model = Document
-        fields = ['id', 'file', 'title', 'uploaded_at']
+        fields = ['id', 'title', 'uploaded_at', 'files']
+
+    def get_files(self, obj):
+        documents = Document.objects.filter(client=obj.client, title=obj.title)
+        return DocumentFileSerializer(documents, many=True).data
+
+class MultipleDocumentsSerializer(serializers.Serializer):
+    documents = serializers.ListField(
+        child=serializers.FileField()
+    )
 
     def create(self, validated_data):
-        # Предполагаем, что client_id передается в контексте сериализатора
         client_id = self.context['view'].kwargs['client_id']
         client = Client.objects.get(id=client_id)
-        validated_data['client'] = client
-        return super().create(validated_data)
+        documents = validated_data.pop('documents')
+        title = self.context['title']
+        uploaded_at = self.context['uploaded_at']
 
+        # Создаем основной документ, который будет группой
+        doc_group = Document.objects.create(client=client, title=title, uploaded_at=uploaded_at)
+
+        # Создаем вложенные документы для каждого файла
+        for document in documents:
+            Document.objects.create(client=client, file=document, title=title)
+
+        return doc_group
 
 class PaymentSerializer(serializers.ModelSerializer):
 
@@ -79,9 +101,9 @@ class ClientSerializer(serializers.ModelSerializer):
     #     read_only=False
     # )
 
-    mother = MotherSerializer()
-    father = FatherSerializer()
-    contact = ContactSerializer()
+    mother = MotherSerializer(required=False)
+    father = FatherSerializer(required=False)
+    contact = ContactSerializer(required=False)
     children = ChildSerializer(many=True, required=False)
 
     documents = DocumentSerializer(many=True, required=False)
