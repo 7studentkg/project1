@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 2 # Измените это значение по необходимости
+    page_size = 4 # Измените это значение по необходимости
     page_size_query_param = 'page_size'  # Разрешаем клиентам изменять размер страницы ?page_size=100
     max_page_size = 100
 
@@ -114,23 +114,25 @@ class DocumentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='edit_documents')
     def edit_documents(self, request, pk=None, *args, **kwargs):
         try:
-            doc_group = Document.objects.get(pk=pk)  # Получаем основной документ, который представляет группу
+            # Получаем основной документ, который представляет группу
+            doc_group = Document.objects.get(pk=pk)
         except Document.DoesNotExist:
             return Response({'error': 'Document group not found'}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data
 
-        # Обновление заголовка группы документов
-        doc_group.title = data.get('title', doc_group.title)
-        doc_group.save()
+        # Обновление заголовка группы документов, если предоставлено новое название
+        if 'title' in data:
+            doc_group.title = data['title']
+            doc_group.save()
 
         with transaction.atomic():
-            # Удаление документов
+            # Удаление документов, если есть IDs для удаления
             delete_ids = data.get('delete_ids', [])
             if delete_ids:
                 Document.objects.filter(id__in=delete_ids, client=doc_group.client).delete()
 
-            # Обновление существующих файлов (пример обновления не представлен, добавьте при необходимости)
+            # Обновление существующих файлов, если предоставлены данные
             updated_documents = data.get('updated_documents', [])
             for doc_data in updated_documents:
                 doc_id = doc_data.get('id')
@@ -139,7 +141,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
                 if serializer.is_valid():
                     serializer.save()
 
-            # Добавление новых файлов
+            # Добавление новых файлов, если предоставлены данные
             new_documents = data.get('new_documents', [])
             for new_doc in new_documents:
                 new_doc['client'] = doc_group.client.id
