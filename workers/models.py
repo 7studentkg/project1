@@ -57,7 +57,6 @@ class Client(models.Model):
     birthLastName = models.CharField(max_length=200) # ФАМИЛИЯ ПРИ РОЖДЕНИЙ
     currentLastName = models.CharField(max_length=200) # ФАМИЛИЯ
     firstName = models.CharField(max_length=200) # ИМЯ
-    fullName = models.CharField(max_length=200, blank=True)
     birthDate = models.CharField(max_length=200) # ДАТА РОЖДЕНИЯ
     birthPlace = models.CharField(max_length=200) # МЕСТО РОЖДЕНИЯ
     residence = models.CharField(max_length=200) # ФАКТИЧЕСКИЙ АДРЕС ПРОЖИВАНИЕ
@@ -120,6 +119,8 @@ class Document(models.Model):
     file = models.FileField(upload_to='client_documents/%Y/%m/%d/', max_length=255, blank=True)
     title = models.TextField(verbose_name="Название", blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+
 
 
 

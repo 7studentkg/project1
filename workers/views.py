@@ -1,6 +1,8 @@
 from .serializers import ( ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer,
-MultipleDocumentsSerializer, DocumentFileSerializer)
+                        MultipleDocumentsSerializer, DocumentFileSerializer)
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
+from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .authentication import CsrfExemptSessionAuthentication
 from rest_framework.pagination import PageNumberPagination
@@ -8,7 +10,6 @@ from .models import Client, Document, Payment, Refund
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import MultiPartParser
-from django.shortcuts import get_object_or_404
 from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -16,15 +17,13 @@ from rest_framework import viewsets
 from .filters import ClientFilter
 from django.utils import timezone
 from django.db import transaction
-import mimetypes
 import logging
-import json
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 4 # Измените это значение по необходимости
+    page_size = 30 # Измените это значение по необходимости
     page_size_query_param = 'page_size'  # Разрешаем клиентам изменять размер страницы ?page_size=100
     max_page_size = 100
 
@@ -40,6 +39,8 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 # GET
 class ClientList(ListAPIView):
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Client.objects.all().order_by('-uploaded_at')
     serializer_class = ClientSerializer
     pagination_class = CustomPageNumberPagination
@@ -65,6 +66,8 @@ class ClientList(ListAPIView):
 # POST
 @method_decorator(csrf_exempt, name='dispatch' )
 class ClientCreate(CreateAPIView):
+    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated]
     authentication_classes = (CsrfExemptSessionAuthentication,)
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
@@ -73,6 +76,8 @@ class ClientCreate(CreateAPIView):
 
 # GET / UPDATE / DELETE
 class ClientDetail(RetrieveUpdateDestroyAPIView):
+    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
     lookup_field = 'id'
@@ -81,6 +86,8 @@ class ClientDetail(RetrieveUpdateDestroyAPIView):
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
+    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated]
     serializer_class = DocumentSerializer
 
     def get_queryset(self):
@@ -114,37 +121,32 @@ class DocumentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='edit_documents')
     def edit_documents(self, request, pk=None, *args, **kwargs):
         try:
-            # Получаем основной документ, который представляет группу
-            doc_group = Document.objects.get(pk=pk)
+            doc_group = Document.objects.get(pk=pk, is_group=True)  # Убедитесь, что это группа
         except Document.DoesNotExist:
             return Response({'error': 'Document group not found'}, status=status.HTTP_404_NOT_FOUND)
 
         data = request.data
-
-        # Обновление заголовка группы документов, если предоставлено новое название
         if 'title' in data:
             doc_group.title = data['title']
             doc_group.save()
 
         with transaction.atomic():
-            # Удаление документов, если есть IDs для удаления
-            delete_ids = data.get('delete_ids', [])
-            if delete_ids:
-                Document.objects.filter(id__in=delete_ids, client=doc_group.client).delete()
+            delete_uuids = data.get('delete_ids', [])
+            if delete_uuids:
+                Document.objects.filter(uuid__in=delete_uuids, is_group=False).delete()
 
-            # Обновление существующих файлов, если предоставлены данные
             updated_documents = data.get('updated_documents', [])
             for doc_data in updated_documents:
-                doc_id = doc_data.get('id')
-                document = Document.objects.get(id=doc_id, client=doc_group.client)
+                doc_uuid = doc_data.get('uuid')
+                document = Document.objects.get(uuid=doc_uuid, is_group=False)
                 serializer = DocumentFileSerializer(document, data=doc_data, partial=True)
                 if serializer.is_valid():
                     serializer.save()
 
-            # Добавление новых файлов, если предоставлены данные
             new_documents = data.get('new_documents', [])
             for new_doc in new_documents:
                 new_doc['client'] = doc_group.client.id
+                new_doc['is_group'] = False
                 serializer = DocumentFileSerializer(data=new_doc)
                 if serializer.is_valid():
                     serializer.save()
@@ -152,7 +154,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Document group updated successfully'}, status=status.HTTP_200_OK)
 
 
+
 class PaymentViewSet(viewsets.ModelViewSet):
+    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated]
     serializer_class = PaymentSerializer
 
     def get_queryset(self):
@@ -166,6 +171,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 
 class RefundViewSet(viewsets.ModelViewSet):
+    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated]
     serializer_class = RefundSerializer
 
     def get_queryset(self):

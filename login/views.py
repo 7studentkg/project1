@@ -5,9 +5,7 @@ from django.contrib.auth import authenticate, login
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from .serializer import LoginSerializer
-
-
-
+from rest_framework.authtoken.models import Token
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -20,7 +18,8 @@ class LoginAPIView(APIView):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return Response({"message": "Успешный вход в систему"}, status=status.HTTP_200_OK)
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({"token": token.key, "message": "Успешный вход в систему"}, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Неправильные учетные данные"}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
