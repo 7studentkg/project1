@@ -1,11 +1,10 @@
-from django.shortcuts import get_object_or_404, render
-from rest_framework.response import Response
-from rest_framework import status, permissions
+from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login
 from rest_framework.permissions import AllowAny
+from rest_framework import status, permissions
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializer import LoginSerializer
-from rest_framework.authtoken.models import Token
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]

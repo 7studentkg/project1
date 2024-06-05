@@ -1,4 +1,4 @@
-from .models import Client, Document, Payment, Refund, Mother, Father, Contact, Child
+from .models import Client, Document, DocumentFile, Payment, Refund, Mother, Father, Contact, Child
 from rest_framework import serializers
 
 
@@ -24,20 +24,39 @@ class MultipleDocumentsSerializer(serializers.Serializer):
     )
 
     def create(self, validated_data):
-        client_id = self.context['view'].kwargs['client_id']
+        client_id = self.context['client_id']
         client = Client.objects.get(id=client_id)
         documents = validated_data.pop('documents')
         title = self.context['title']
         uploaded_at = self.context['uploaded_at']
 
-        # Создаем основной документ, который будет группой
-        doc_group = Document.objects.create(client=client, title=title, uploaded_at=uploaded_at)
+        # Create the main document group
+        doc_group = Document.objects.create(client=client, title=title, uploaded_at=uploaded_at, is_group=True)
 
-        # Создаем вложенные документы для каждого файла
-        for document in documents:
-            Document.objects.create(client=client, file=document, title=title)
+        # Create nested documents for each file
+        for document_file in documents:
+            Document.objects.create(client=client, file=document_file, title=title, is_group=False)
 
         return doc_group
+
+
+# class DocumentFileSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = DocumentFile
+#         fields = ['id', 'file']
+
+
+# class DocumentSerializer(serializers.ModelSerializer):
+#     files = DocumentFileSerializer(many=True, read_only=True)
+
+#     class Meta:
+#         model = Document
+#         fields = ['id', 'title', 'uploaded_at', 'files']
+
+#     def create(self, validated_data):
+#         document = Document.objects.create(**validated_data)
+#         return document
+
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -47,7 +66,6 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = ['id', 'amount', 'title', 'uploaded_at']
 
     def create(self, validated_data):
-        # Предполагаем, что client_id передается в контексте сериализатора
         client_id = self.context['view'].kwargs['client_id']
         client = Client.objects.get(id=client_id)
         validated_data['client'] = client
@@ -60,7 +78,6 @@ class RefundSerializer(serializers.ModelSerializer):
         fields = ['id', 'amount', 'title', 'uploaded_at']
 
     def create(self, validated_data):
-        # Предполагаем, что client_id передается в контексте сериализатора
         client_id = self.context['view'].kwargs['client_id']
         client = Client.objects.get(id=client_id)
         validated_data['client'] = client
@@ -126,12 +143,16 @@ class ClientSerializer(serializers.ModelSerializer):
         # document_files = self.context['request'].FILES
 
         client = Client.objects.create(**validated_data)
-        Mother.objects.create(client=client, **mother_data)
-        Father.objects.create(client=client, **father_data)
-        Contact.objects.create(client=client, **contact_data)
+        if mother_data is not None:
+            Mother.objects.create(client=client, **mother_data)
+        if father_data is not None:
+            Father.objects.create(client=client, **father_data)
+        if contact_data is not None:
+            Contact.objects.create(client=client, **contact_data)
 
         for child_data in children_data:
             Child.objects.create(client=client, **child_data)
+
 
         # for key, file in document_files.items():
         #     title = validated_data.get('title', '')

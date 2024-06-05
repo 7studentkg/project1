@@ -1,6 +1,6 @@
-import enum
-from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.db import models
+import enum
 
 
 
@@ -114,14 +114,22 @@ class Contact(models.Model):
 
 
 
+
+# class Document(models.Model):
+#     client = models.ForeignKey(Client, related_name='documents', on_delete=models.CASCADE)
+#     file = models.FileField(upload_to='client_documents/%Y/%m/%d/', max_length=255, blank=True)
+#     title = models.TextField(verbose_name="Название", blank=True)
+#     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+
 class Document(models.Model):
-    client = models.ForeignKey(Client, related_name='documents', on_delete=models.CASCADE)
-    file = models.FileField(upload_to='client_documents/%Y/%m/%d/', max_length=255, blank=True)
-    title = models.TextField(verbose_name="Название", blank=True)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='document')
+    title = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-
-
+class DocumentFile(models.Model):
+    document = models.ForeignKey(Document, related_name='files', on_delete=models.CASCADE)
+    file = models.FileField(upload_to='client_documents/%Y/%m/%d/')
 
 
 class Payment(models.Model):

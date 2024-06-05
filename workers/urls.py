@@ -1,6 +1,6 @@
+from .views import DocumentViewSet, PaymentViewSet, RefundViewSet, ClientCreate, ClientList, ClientDetail
 from django.urls import path, include
 from . import views
-from .views import DocumentViewSet, PaymentViewSet, RefundViewSet, ClientCreate, ClientList, ClientDetail
 
 # Определение методов для каждой операции
 documents_list = DocumentViewSet.as_view({
