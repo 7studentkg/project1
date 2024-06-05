@@ -1,7 +1,10 @@
 from django.contrib import admin
-from .models import Client, Document, Payment, Refund, Contact, Mother, Father, Child
+from .models import Client, Document, DocumentFile, Payment, Refund, Contact, Mother, Father, Child
 from django.db.models import Sum
 
+class DocumentFileInline(admin.TabularInline):
+    model = DocumentFile
+    extra = 1
 
 class DocumentInline(admin.TabularInline):
     model = Document
@@ -36,7 +39,7 @@ class ClientAdmin(admin.ModelAdmin):
         DocumentInline, PaymentInline, RefundInline,
         MotherInline, FatherInline, ContactInline, ChildInline
     ]
-    list_display = ['__str__', 'documents_count_admin', 'children_count_admin', 'total_payments', 'total_refunds']
+    list_display = [ '__str__', 'total_payments', 'total_refunds', 'documents_count_admin', 'children_count_admin', 'id']
 
     def documents_count_admin(self, obj):
         return obj.documents.count()
@@ -55,5 +58,17 @@ class ClientAdmin(admin.ModelAdmin):
     total_refunds.short_description = 'Сумма возвратов'
 
 admin.site.register(Client, ClientAdmin)
+
+
+class DocumentFileAdmin(admin.ModelAdmin):
+    list_display = ['id', 'file']
+
+# class DocumentAdmin(admin.ModelAdmin):
+#     inlines = [DocumentFileInline]
+#     list_display = ['id', 'title', 'client', 'uploaded_at']
+
+# admin.site.register(Document, DocumentAdmin)
+admin.site.register(DocumentFile, DocumentFileAdmin)
+
 # admin.site.register(Status)
 # admin.site.register(Country)

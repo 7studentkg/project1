@@ -1,61 +1,43 @@
 from .models import Client, Document, DocumentFile, Payment, Refund, Mother, Father, Contact, Child
 from rest_framework import serializers
-
+import json
 
 class DocumentFileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Document
-        fields = ['pk', 'file']
+        model = DocumentFile
+        fields = ['id', 'file']
 
 class DocumentSerializer(serializers.ModelSerializer):
-    files = serializers.SerializerMethodField()
-
+    # files = DocumentFileSerializer(many=True)
+    files = serializers.ListField(
+        child=serializers.FileField(max_length=100000, allow_empty_file=False, use_url=False),
+        write_only=True
+    )
     class Meta:
         model = Document
         fields = ['id', 'title', 'uploaded_at', 'files']
 
-    def get_files(self, obj):
-        documents = Document.objects.filter(client=obj.client, title=obj.title)
-        return DocumentFileSerializer(documents, many=True).data
-
-class MultipleDocumentsSerializer(serializers.Serializer):
-    documents = serializers.ListField(
-        child=serializers.FileField()
-    )
-
     def create(self, validated_data):
+        files_data = validated_data.pop('files')
         client_id = self.context['client_id']
         client = Client.objects.get(id=client_id)
-        documents = validated_data.pop('documents')
-        title = self.context['title']
-        uploaded_at = self.context['uploaded_at']
+        document = Document.objects.create(client=client, **validated_data)
+        # for file_data in files_data:
+        #     DocumentFile.objects.create(**file_data)
+        # return document
 
-        # Create the main document group
-        doc_group = Document.objects.create(client=client, title=title, uploaded_at=uploaded_at, is_group=True)
+        for file in files_data:
+            DocumentFile.objects.create(document=document, file=file)
+        return document
 
-        # Create nested documents for each file
-        for document_file in documents:
-            Document.objects.create(client=client, file=document_file, title=title, is_group=False)
+        # for file_data in files_data:
+        #     DocumentFile.objects.create(document=document, **file_data)
+        # return document
 
-        return doc_group
-
-
-# class DocumentFileSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = DocumentFile
-#         fields = ['id', 'file']
-
-
-# class DocumentSerializer(serializers.ModelSerializer):
-#     files = DocumentFileSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Document
-#         fields = ['id', 'title', 'uploaded_at', 'files']
-
-#     def create(self, validated_data):
-#         document = Document.objects.create(**validated_data)
-#         return document
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['files'] = DocumentFileSerializer(instance.files.all(), many=True).data
+        return representation
 
 
 
@@ -135,14 +117,26 @@ class ClientSerializer(serializers.ModelSerializer):
             'uploaded_at', 'last_modified'
         ]
 
+
+
     def create(self, validated_data):
         mother_data = validated_data.pop('mother', None)
         father_data = validated_data.pop('father', None)
         contact_data = validated_data.pop('contact', None)
         children_data = validated_data.pop('children', [])
-        # document_files = self.context['request'].FILES
+
+        # Deserialize JSON strings if necessary
+        if mother_data and isinstance(mother_data, str):
+            mother_data = json.loads(mother_data)
+        if father_data and isinstance(father_data, str):
+            father_data = json.loads(father_data)
+        if contact_data and isinstance(contact_data, str):
+            contact_data = json.loads(contact_data)
+        if children_data and isinstance(children_data, str):
+            children_data = json.loads(children_data)
 
         client = Client.objects.create(**validated_data)
+
         if mother_data is not None:
             Mother.objects.create(client=client, **mother_data)
         if father_data is not None:
@@ -153,13 +147,7 @@ class ClientSerializer(serializers.ModelSerializer):
         for child_data in children_data:
             Child.objects.create(client=client, **child_data)
 
-
-        # for key, file in document_files.items():
-        #     title = validated_data.get('title', '')
-        #     Document.objects.create(client=client, file=file, title=title)
-
         return client
-
     def update(self, instance, validated_data):
         mother_data = validated_data.pop('mother', None)
         father_data = validated_data.pop('father', None)

@@ -82,6 +82,9 @@ class Client(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True) # ДАТА ДОБАВЛЕНИЯ
     last_modified = models.DateTimeField(auto_now=True) # ДАТА ПОСЛЕДНЕГО ИЗМЕНЕНИЯ
 
+    def __str__(self):
+        return f'{self.birthLastName} {self.firstName}'
+
 
 class Child(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='children')
@@ -122,14 +125,22 @@ class Contact(models.Model):
 #     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 
-class Document(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='document')
-    title = models.CharField(max_length=255)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class DocumentFile(models.Model):
-    document = models.ForeignKey(Document, related_name='files', on_delete=models.CASCADE)
-    file = models.FileField(upload_to='client_documents/%Y/%m/%d/')
+    file = models.FileField(upload_to='client_documents/%Y/%m/%d/', max_length=255, blank=True)
+
+    def __str__(self):
+        return self.file.name
+
+
+class Document(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='documents')
+    title = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    files = models.ManyToManyField('DocumentFile')
+
+    def __str__(self):
+        return self.title
 
 
 class Payment(models.Model):
