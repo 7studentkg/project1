@@ -137,10 +137,11 @@ class Document(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='documents')
     title = models.CharField(max_length=255)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    files = models.ManyToManyField('DocumentFile')
+    files = models.ManyToManyField(DocumentFile, related_name='documents_files')
 
     def __str__(self):
         return self.title
+
 
 
 class Payment(models.Model):

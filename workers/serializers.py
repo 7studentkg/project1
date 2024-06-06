@@ -8,26 +8,28 @@ class DocumentFileSerializer(serializers.ModelSerializer):
         fields = ['id', 'file']
 
 class DocumentSerializer(serializers.ModelSerializer):
-    # files = DocumentFileSerializer(many=True)
-    files = serializers.ListField(
+    files = DocumentFileSerializer(many=True, read_only=True)
+    uploaded_files = serializers.ListField(
         child=serializers.FileField(max_length=100000, allow_empty_file=False, use_url=False),
         write_only=True
     )
     class Meta:
         model = Document
-        fields = ['id', 'title', 'uploaded_at', 'files']
+        fields = ['id', 'title', 'uploaded_at', 'files', 'uploaded_files']
 
     def create(self, validated_data):
-        files_data = validated_data.pop('files')
+        files_data = validated_data.pop('uploaded_files')
         client_id = self.context['client_id']
         client = Client.objects.get(id=client_id)
         document = Document.objects.create(client=client, **validated_data)
-        # for file_data in files_data:
-        #     DocumentFile.objects.create(**file_data)
+
+        # for file in files_data:
+        #     DocumentFile.objects.create(document=document, file=file)
         # return document
 
         for file in files_data:
-            DocumentFile.objects.create(document=document, file=file)
+            doc_file = DocumentFile.objects.create(file=file)
+            document.files.add(doc_file)
         return document
 
         # for file_data in files_data:
@@ -126,34 +128,44 @@ class ClientSerializer(serializers.ModelSerializer):
         children_data = validated_data.pop('children', [])
 
         # Deserialize JSON strings if necessary
-        if mother_data and isinstance(mother_data, str):
+        if isinstance(mother_data, str):
             mother_data = json.loads(mother_data)
-        if father_data and isinstance(father_data, str):
+        if isinstance(father_data, str):
             father_data = json.loads(father_data)
-        if contact_data and isinstance(contact_data, str):
+        if isinstance(contact_data, str):
             contact_data = json.loads(contact_data)
-        if children_data and isinstance(children_data, str):
+        if isinstance(children_data, str):
             children_data = json.loads(children_data)
 
         client = Client.objects.create(**validated_data)
 
-        if mother_data is not None:
+        if mother_data:
             Mother.objects.create(client=client, **mother_data)
-        if father_data is not None:
+        if father_data:
             Father.objects.create(client=client, **father_data)
-        if contact_data is not None:
+        if contact_data:
             Contact.objects.create(client=client, **contact_data)
 
         for child_data in children_data:
             Child.objects.create(client=client, **child_data)
 
         return client
+
+
     def update(self, instance, validated_data):
         mother_data = validated_data.pop('mother', None)
         father_data = validated_data.pop('father', None)
         contact_data = validated_data.pop('contact', None)
         children_data = validated_data.pop('children', [])
-        # document_files = self.context['request'].FILES
+
+        if isinstance(mother_data, str):
+            mother_data = json.loads(mother_data)
+        if isinstance(father_data, str):
+            father_data = json.loads(father_data)
+        if isinstance(contact_data, str):
+            contact_data = json.loads(contact_data)
+        if isinstance(children_data, str):
+            children_data = json.loads(children_data)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -180,10 +192,6 @@ class ClientSerializer(serializers.ModelSerializer):
                 child.save()
             else:
                 Child.objects.create(client=instance, **child_data)
-
-        # for key, file in document_files.items():
-        #     title = validated_data.get('title', '')
-        #     Document.objects.create(client=instance, file=file, title=title)
 
         instance.save()
         return instance
