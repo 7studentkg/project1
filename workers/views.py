@@ -117,6 +117,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         client_id = self.kwargs['client_id']
         return Document.objects.filter(client__id=client_id).order_by('id')
 
+
     @action(detail=False, methods=['post'], url_path='upload_documents')
     def upload_documents(self, request, client_id=None):
         client = Client.objects.get(id=client_id)
@@ -128,6 +129,17 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Не удалось добавить документ!','data': serializer.errors},
                             status=status.HTTP_400_BAD_REQUEST)
 
+
+    @action(detail=True, methods=['post'], url_path='update_documents')
+    def update_documents(self, request, client_id=None, pk=None):
+        instance = self.get_object()
+        serializer = DocumentSerializer(instance, data=request.data, partial=True, context={'client_id': instance.client.id})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Документ успешно обновлен!', 'data': serializer.data},
+                            status=status.HTTP_200_OK)
+        return Response({'message': 'Не удалось обновить документ!', 'data': serializer.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 class PaymentViewSet(viewsets.ModelViewSet):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]

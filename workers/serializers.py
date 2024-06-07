@@ -11,11 +11,18 @@ class DocumentSerializer(serializers.ModelSerializer):
     files = DocumentFileSerializer(many=True, read_only=True)
     uploaded_files = serializers.ListField(
         child=serializers.FileField(max_length=100000, allow_empty_file=False, use_url=False),
-        write_only=True
+        write_only=True,
+        required=False
     )
+    delete_list = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
+
     class Meta:
         model = Document
-        fields = ['id', 'title', 'uploaded_at', 'files', 'uploaded_files']
+        fields = ['id', 'title', 'uploaded_at', 'files', 'uploaded_files', 'delete_list']
 
     def create(self, validated_data):
         files_data = validated_data.pop('uploaded_files')
@@ -33,6 +40,31 @@ class DocumentSerializer(serializers.ModelSerializer):
         representation['files'] = DocumentFileSerializer(instance.files.all(), many=True).data
         return representation
 
+    def update(self, instance, validated_data):
+        files_data = validated_data.pop('uploaded_files', [])
+        delete_list = validated_data.pop('delete_list', [])
+
+        instance.title = validated_data.get('title', instance.title)
+        instance.save()
+
+        # Добавление новых файлов
+        for file in files_data:
+            doc_file = DocumentFile.objects.create(file=file)
+            instance.files.add(doc_file)
+
+        # Удаление файлов из delete_list
+        for file_id in delete_list:
+            file_instance = DocumentFile.objects.filter(id=file_id).first()
+            if file_instance:
+                instance.files.remove(file_instance)
+                file_instance.delete()
+
+        return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['files'] = DocumentFileSerializer(instance.files.all(), many=True).data
+        return representation
 
 
 class PaymentSerializer(serializers.ModelSerializer):
