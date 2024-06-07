@@ -23,18 +23,10 @@ class DocumentSerializer(serializers.ModelSerializer):
         client = Client.objects.get(id=client_id)
         document = Document.objects.create(client=client, **validated_data)
 
-        # for file in files_data:
-        #     DocumentFile.objects.create(document=document, file=file)
-        # return document
-
         for file in files_data:
             doc_file = DocumentFile.objects.create(file=file)
             document.files.add(doc_file)
         return document
-
-        # for file_data in files_data:
-        #     DocumentFile.objects.create(document=document, **file_data)
-        # return document
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -54,7 +46,6 @@ class PaymentSerializer(serializers.ModelSerializer):
         client = Client.objects.get(id=client_id)
         validated_data['client'] = client
         return super().create(validated_data)
-
 
 class RefundSerializer(serializers.ModelSerializer):
     class Meta:
@@ -121,20 +112,20 @@ class ClientSerializer(serializers.ModelSerializer):
 
 
 
-    def create(self, validated_data):
-        mother_data = validated_data.pop('mother', None)
-        father_data = validated_data.pop('father', None)
-        contact_data = validated_data.pop('contact', None)
-        children_data = validated_data.pop('children', [])
 
-        # Deserialize JSON strings if necessary
-        if isinstance(mother_data, str):
+    def create(self, validated_data):
+        mother_data = self.initial_data.get('mother')
+        father_data = self.initial_data.get('father')
+        contact_data = self.initial_data.get('contact')
+        children_data = self.initial_data.get('children', [])
+
+        if mother_data:
             mother_data = json.loads(mother_data)
-        if isinstance(father_data, str):
+        if father_data:
             father_data = json.loads(father_data)
-        if isinstance(contact_data, str):
+        if contact_data:
             contact_data = json.loads(contact_data)
-        if isinstance(children_data, str):
+        if children_data:
             children_data = json.loads(children_data)
 
         client = Client.objects.create(**validated_data)
@@ -151,20 +142,19 @@ class ClientSerializer(serializers.ModelSerializer):
 
         return client
 
-
     def update(self, instance, validated_data):
-        mother_data = validated_data.pop('mother', None)
-        father_data = validated_data.pop('father', None)
-        contact_data = validated_data.pop('contact', None)
-        children_data = validated_data.pop('children', [])
+        mother_data = self.initial_data.get('mother', None)
+        father_data = self.initial_data.get('father', None)
+        contact_data = self.initial_data.get('contact', None)
+        children_data = self.initial_data.get('children', [])
 
-        if isinstance(mother_data, str):
+        if mother_data:
             mother_data = json.loads(mother_data)
-        if isinstance(father_data, str):
+        if father_data:
             father_data = json.loads(father_data)
-        if isinstance(contact_data, str):
+        if contact_data:
             contact_data = json.loads(contact_data)
-        if isinstance(children_data, str):
+        if children_data:
             children_data = json.loads(children_data)
 
         for attr, value in validated_data.items():
@@ -195,3 +185,98 @@ class ClientSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+
+        # def create(self, validated_data):
+    #     mother_data = validated_data.pop('mother', None)
+    #     father_data = validated_data.pop('father', None)
+    #     contact_data = validated_data.pop('contact', None)
+    #     children_data = validated_data.pop('children', [])
+
+    #     logger.debug(f"Raw mother data: {mother_data}")
+    #     logger.debug(f"Raw father data: {father_data}")
+    #     logger.debug(f"Raw contact data: {contact_data}")
+    #     logger.debug(f"Raw children data: {children_data}")
+
+    #     if isinstance(mother_data, str):
+    #         mother_data = json.loads(mother_data)
+    #     if isinstance(father_data, str):
+    #         father_data = json.loads(father_data)
+    #     if isinstance(contact_data, str):
+    #         contact_data = json.loads(contact_data)
+    #     if isinstance(children_data, str):
+    #         children_data = json.loads(children_data)
+
+    #     logger.debug(f"Processed mother data: {mother_data}")
+    #     logger.debug(f"Processed father data: {father_data}")
+    #     logger.debug(f"Processed contact data: {contact_data}")
+    #     logger.debug(f"Processed children data: {children_data}")
+
+    #     client = Client.objects.create(**validated_data)
+
+    #     if mother_data:
+    #         Mother.objects.create(client=client, **mother_data)
+    #     if father_data:
+    #         Father.objects.create(client=client, **father_data)
+    #     if contact_data:
+    #         Contact.objects.create(client=client, **contact_data)
+
+    #     for child_data in children_data:
+    #         Child.objects.create(client=client, **child_data)
+
+    #     return client
+
+    # def update(self, instance, validated_data):
+    #     mother_data = validated_data.pop('mother', None)
+    #     father_data = validated_data.pop('father', None)
+    #     contact_data = validated_data.pop('contact', None)
+    #     children_data = validated_data.pop('children', [])
+
+    #     logger.debug(f"Raw mother data: {mother_data}")
+    #     logger.debug(f"Raw father data: {father_data}")
+    #     logger.debug(f"Raw contact data: {contact_data}")
+    #     logger.debug(f"Raw children data: {children_data}")
+
+    #     if isinstance(mother_data, str):
+    #         mother_data = json.loads(mother_data)
+    #     if isinstance(father_data, str):
+    #         father_data = json.loads(father_data)
+    #     if isinstance(contact_data, str):
+    #         contact_data = json.loads(contact_data)
+    #     if isinstance(children_data, str):
+    #         children_data = json.loads(children_data)
+
+    #     logger.debug(f"Processed mother data: {mother_data}")
+    #     logger.debug(f"Processed father data: {father_data}")
+    #     logger.debug(f"Processed contact data: {contact_data}")
+    #     logger.debug(f"Processed children data: {children_data}")
+
+    #     for attr, value in validated_data.items():
+    #         setattr(instance, attr, value)
+
+    #     if mother_data:
+    #         Mother.objects.update_or_create(client=instance, defaults=mother_data)
+    #     if father_data:
+    #         Father.objects.update_or_create(client=instance, defaults=father_data)
+    #     if contact_data:
+    #         Contact.objects.update_or_create(client=instance, defaults=contact_data)
+
+    #     existing_ids = [child.id for child in instance.children.all()]
+    #     incoming_ids = [item['id'] for item in children_data if 'id' in item]
+
+    #     for child_id in set(existing_ids) - set(incoming_ids):
+    #         Child.objects.filter(id=child_id).delete()
+
+    #     for child_data in children_data:
+    #         child_id = child_data.get('id', None)
+    #         if child_id:
+    #             child = Child.objects.get(id=child_id, client=instance)
+    #             for key, value in child_data.items():
+    #                 setattr(child, key, value)
+    #             child.save()
+    #         else:
+    #             Child.objects.create(client=instance, **child_data)
+
+    #     instance.save()
+    #     return instance

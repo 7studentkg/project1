@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Client, Document, DocumentFile, Payment, Refund, Contact, Mother, Father, Child
 from django.db.models import Sum
+from django.db.models import Q
 
 class DocumentFileInline(admin.TabularInline):
     model = DocumentFile
@@ -40,6 +41,18 @@ class ClientAdmin(admin.ModelAdmin):
         MotherInline, FatherInline, ContactInline, ChildInline
     ]
     list_display = [ '__str__', 'total_payments', 'total_refunds', 'documents_count_admin', 'children_count_admin', 'id']
+    search_fields = ['firstName', 'currentLastName']
+
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+        if search_term:
+            search_terms = search_term.split()
+            queries = Q()
+            for term in search_terms:
+                queries |= Q(firstName__icontains=term) | Q(currentLastName__icontains=term)
+            queryset = queryset.filter(queries)
+        return queryset, use_distinct
+
 
     def documents_count_admin(self, obj):
         return obj.documents.count()

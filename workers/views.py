@@ -1,18 +1,19 @@
 from .serializers import ( ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer,)
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .authentication import CsrfExemptSessionAuthentication
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 from .models import Client, Document, Payment, Refund
+from rest_framework.exceptions import ValidationError
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets
 from .filters import ClientFilter
+from rest_framework import status
 
 
 
@@ -33,8 +34,8 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 # GET
 class ClientList(ListAPIView):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Client.objects.all().order_by('-uploaded_at')
     serializer_class = ClientSerializer
     pagination_class = CustomPageNumberPagination
@@ -66,6 +67,32 @@ class ClientCreate(CreateAPIView):
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
 
+    def create(self, request, *args, **kwargs):
+        try:
+            response = super().create(request, *args, **kwargs)
+            return Response({
+                'message': 'Анкета успешно добавлена!',
+                'data': response.data
+            }, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось добавить анкету!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            response = super().update(request, *args, **kwargs)
+            return Response({
+                'message': 'Анкета успешно обновлена!',
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось обновить анкету!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 # GET / UPDATE / DELETE
@@ -96,8 +123,10 @@ class DocumentViewSet(viewsets.ModelViewSet):
         serializer = DocumentSerializer(data=request.data, context={'client_id': client.id})
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': 'Документ успешно добавлен!','data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        return Response({'message': 'Не удалось добавить документ!','data': serializer.errors},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
@@ -114,6 +143,33 @@ class PaymentViewSet(viewsets.ModelViewSet):
         client_id = self.kwargs['client_id']
         serializer.save(client_id=client_id)
 
+    def create(self, request, *args, **kwargs):
+        try:
+            response = super().create(request, *args, **kwargs)
+            return Response({
+                'message': 'Оплата успешно добавлена!',
+                'data': response.data
+            }, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось добавить оплату!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            response = super().update(request, *args, **kwargs)
+            return Response({
+                'message': 'Оплата успешно обновлена!',
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось обновить оплату!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class RefundViewSet(viewsets.ModelViewSet):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
@@ -127,3 +183,29 @@ class RefundViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         client_id = self.kwargs['client_id']
         serializer.save(client_id=client_id)
+
+    def create(self, request, *args, **kwargs):
+        try:
+            response = super().create(request, *args, **kwargs)
+            return Response({
+                'message': 'Возврат успешно добавлен!',
+                'data': response.data
+            }, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось добавить возврат!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            response = super().update(request, *args, **kwargs)
+            return Response({
+                'message': 'Возврат успешно обновлен!',
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось обновить возврат!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
