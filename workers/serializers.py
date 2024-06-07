@@ -40,6 +40,11 @@ class DocumentSerializer(serializers.ModelSerializer):
         representation['files'] = DocumentFileSerializer(instance.files.all(), many=True).data
         return representation
 
+    # def to_representation(self, instance):
+    #     representation = super().to_representation(instance)
+    #     representation['file'] = urllib.parse.unquote(representation['file'])
+    #     return representation
+
     def update(self, instance, validated_data):
         files_data = validated_data.pop('uploaded_files', [])
         delete_list = validated_data.pop('delete_list', [])

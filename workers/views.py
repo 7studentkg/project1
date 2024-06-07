@@ -1,14 +1,15 @@
-from .serializers import ( ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer,)
+from .serializers import ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer, DocumentFileSerializer
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from .models import Client, Document, Payment, Refund, DocumentFile
 from django_filters.rest_framework import DjangoFilterBackend
 from .authentication import CsrfExemptSessionAuthentication
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
-from .models import Client, Document, Payment, Refund
 from rest_framework.exceptions import ValidationError
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse, Http404
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets
@@ -140,6 +141,30 @@ class DocumentViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_200_OK)
         return Response({'message': 'Не удалось обновить документ!', 'data': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
+
+
+    @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)')
+    def retrieve_file_info(self, request, client_id=None, pk=None, file_id=None):
+        try:
+            document = self.get_object()
+            file_instance = document.files.get(id=file_id)
+            serializer = DocumentFileSerializer(file_instance)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except DocumentFile.DoesNotExist:
+            raise Http404("File does not exist")
+
+    @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
+    def download_file(self, request, client_id=None, pk=None, file_id=None):
+        try:
+            document = self.get_object()
+            file_instance = document.files.get(id=file_id)
+            file_path = file_instance.file.path
+            response = HttpResponse(open(file_path, 'rb').read(), content_type='application/octet-stream')
+            response['Content-Disposition'] = f'attachment; filename="{file_instance.file.name}"'
+            return response
+        except DocumentFile.DoesNotExist:
+            raise Http404("File does not exist")
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
