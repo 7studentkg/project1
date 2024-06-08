@@ -25,10 +25,6 @@ class CustomPageNumberPagination(PageNumberPagination):
 
     def get_paginated_response(self, data):
         return Response({
-            'links': {
-                'next': self.get_next_link(),
-                'previous': self.get_previous_link()
-            },
             'count': self.page.paginator.count,
             'results': data # page_count =
         })
@@ -43,20 +39,20 @@ class ClientList(ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClientFilter
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        status = self.request.query_params.get('status', None)
-        country = self.request.query_params.get('country', None)
-        firstName = self.request.query_params.get('firstName', None)
+    # def get_queryset(self):
+    #     queryset = super().get_queryset()
+    #     status = self.request.query_params.get('status', None)
+    #     country = self.request.query_params.get('country', None)
+    #     firstName = self.request.query_params.get('firstName', None)
 
-        if status:
-            queryset = queryset.filter(status__icontains=status)
-        if country:
-            queryset = queryset.filter(country__icontains=country)
-        if firstName:
-            queryset = queryset.filter(firstName__icontains=firstName)
+    #     if status:
+    #         queryset = queryset.filter(status__icontains=status)
+    #     if country:
+    #         queryset = queryset.filter(country__icontains=country)
+    #     if firstName:
+    #         queryset = queryset.filter(firstName__icontains=firstName)
 
-        return queryset
+    #     return queryset
 
 
 # POST
@@ -97,6 +93,7 @@ class ClientCreate(CreateAPIView):
 
 
 # GET / UPDATE / DELETE
+@method_decorator(csrf_exempt, name='dispatch')
 class ClientDetail(RetrieveUpdateDestroyAPIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
     # permission_classes = [IsAuthenticated]

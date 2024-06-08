@@ -1,8 +1,7 @@
 from .views import DocumentViewSet, PaymentViewSet, RefundViewSet, ClientCreate, ClientList, ClientDetail
 from django.urls import path, include
-from . import views
 
-# Определение методов для каждой операции
+
 documents_list = DocumentViewSet.as_view({
     'get': 'list',
 })
@@ -32,15 +31,12 @@ refunds_detail = RefundViewSet.as_view({
     'delete': 'destroy'
 })
 
+
+
 urlpatterns = [
     path('main/', ClientList.as_view(), name='main-page'),
     path('client_add/', ClientCreate.as_view(), name='client-add'),
-    path('client/<int:id>/', ClientDetail.as_view({
-        'get': 'retrieve',       # Получение данных клиента
-        'delete': 'destroy',     # Удаление клиента
-        'put': 'update',         # Обновление данных клиента
-        'patch': 'partial_update' # Частичное обновление данных клиента
-    }), name='client-detail'),
+    path('client/<int:id>/', ClientDetail.as_view(), name='client-detail'),
     path('client/<int:client_id>/documents/', documents_list, name='client-documents-list'),
     path('client/<int:client_id>/documents/upload/', DocumentViewSet.as_view({'post': 'upload_documents'}), name='upload_documents'),
     path('client/<int:client_id>/documents/<int:pk>/', documents_detail, name='client-document-detail'),
