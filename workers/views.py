@@ -30,7 +30,7 @@ class CustomPageNumberPagination(PageNumberPagination):
                 'previous': self.get_previous_link()
             },
             'count': self.page.paginator.count,
-            'results': data
+            'results': data # page_count =
         })
 
 # GET
@@ -54,7 +54,7 @@ class ClientList(ListAPIView):
         if country:
             queryset = queryset.filter(country__icontains=country)
         if firstName:
-            queryset = queryset.filter(firstName__icontains=country)
+            queryset = queryset.filter(firstName__icontains=firstName)
 
         return queryset
 
