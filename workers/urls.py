@@ -18,6 +18,7 @@ payments_list = PaymentViewSet.as_view({
 
 payments_detail = PaymentViewSet.as_view({
     'get': 'retrieve',
+    'put': 'update',
     'delete': 'destroy'
 })
 
@@ -28,6 +29,7 @@ refunds_list = RefundViewSet.as_view({
 
 refunds_detail = RefundViewSet.as_view({
     'get': 'retrieve',
+    'put': 'update',
     'delete': 'destroy'
 })
 
@@ -41,7 +43,7 @@ urlpatterns = [
     path('client/<int:client_id>/documents/upload/', DocumentViewSet.as_view({'post': 'upload_documents'}), name='upload_documents'),
     path('client/<int:client_id>/documents/<int:pk>/', documents_detail, name='client-document-detail'),
     path('client/<int:client_id>/documents/<int:pk>/update/', DocumentViewSet.as_view({'post': 'update_documents'}), name='update_documents'),
-    path('client/<int:client_id>/documents/<int:pk>/files/<int:file_id>/', DocumentViewSet.as_view({'get': 'retrieve_file_info'}), name='retrieve_file_info'),
+    # path('client/<int:client_id>/documents/<int:pk>/files/<int:file_id>/', DocumentViewSet.as_view({'get': 'retrieve_file_info'}), name='retrieve_file_info'),
     path('client/<int:client_id>/documents/<int:pk>/files/<int:file_id>/download/', DocumentViewSet.as_view({'get': 'download_file'}), name='download_file'),
     path('client/<int:client_id>/payments/', payments_list, name='client-payment-list'),
     path('client/<int:client_id>/payments/<int:pk>/', payments_detail, name='client-payment-detail'),

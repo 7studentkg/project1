@@ -19,14 +19,17 @@ from rest_framework import status
 
 
 class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 30 # Измените это значение по необходимости
-    page_size_query_param = 'page_size'  # Разрешаем клиентам изменять размер страницы ?page_size=100
+    page_size = 2
+    page_size_query_param = 'page_size'
     max_page_size = 100
 
     def get_paginated_response(self, data):
+        total_pages = self.page.paginator.num_pages
         return Response({
-            'count': self.page.paginator.count,
-            'results': data # page_count =
+            'count_clients': self.page.paginator.count,
+            'count_pages': total_pages,
+            'results': data
+
         })
 
 # GET
@@ -38,21 +41,6 @@ class ClientList(ListAPIView):
     pagination_class = CustomPageNumberPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClientFilter
-
-    # def get_queryset(self):
-    #     queryset = super().get_queryset()
-    #     status = self.request.query_params.get('status', None)
-    #     country = self.request.query_params.get('country', None)
-    #     firstName = self.request.query_params.get('firstName', None)
-
-    #     if status:
-    #         queryset = queryset.filter(status__icontains=status)
-    #     if country:
-    #         queryset = queryset.filter(country__icontains=country)
-    #     if firstName:
-    #         queryset = queryset.filter(firstName__icontains=firstName)
-
-    #     return queryset
 
 
 # POST
@@ -102,6 +90,34 @@ class ClientDetail(RetrieveUpdateDestroyAPIView):
     lookup_field = 'id'
 
 
+    def update(self, request, *args, **kwargs):
+        try:
+            response = super().update(request, *args, **kwargs)
+            return Response({
+                'message': 'Анкета клиента успешно обновлена!',
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось обновить анкету клиента!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            response = super().destroy(request, *args, **kwargs)
+            return Response({
+                'message': 'Клиент успешно удален!',
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось удалить клиента!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
@@ -128,6 +144,20 @@ class DocumentViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            response = super().destroy(request, *args, **kwargs)
+            return Response({
+                'message': 'Документ успешно удален!',
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось удалить документ!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
     @action(detail=True, methods=['post'], url_path='update_documents')
     def update_documents(self, request, client_id=None, pk=None):
         instance = self.get_object()
@@ -140,15 +170,15 @@ class DocumentViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-    @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)')
-    def retrieve_file_info(self, request, client_id=None, pk=None, file_id=None):
-        try:
-            document = self.get_object()
-            file_instance = document.files.get(id=file_id)
-            serializer = DocumentFileSerializer(file_instance)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except DocumentFile.DoesNotExist:
-            raise Http404("File does not exist")
+    # @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)')
+    # def retrieve_file_info(self, request, client_id=None, pk=None, file_id=None):
+    #     try:
+    #         document = self.get_object()
+    #         file_instance = document.files.get(id=file_id)
+    #         serializer = DocumentFileSerializer(file_instance)
+    #         return Response(serializer.data, status=status.HTTP_200_OK)
+    #     except DocumentFile.DoesNotExist:
+    #         raise Http404("File does not exist")
 
     @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
     def download_file(self, request, client_id=None, pk=None, file_id=None):
@@ -160,7 +190,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
             response['Content-Disposition'] = f'attachment; filename="{file_instance.file.name}"'
             return response
         except DocumentFile.DoesNotExist:
-            raise Http404("File does not exist")
+            raise Http404("Файл не был найден")
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
@@ -203,6 +233,19 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 'errors': e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            response = super().destroy(request, *args, **kwargs)
+            return Response({
+                'message': 'Оплата успешно удалена!',
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось удалить оплату!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class RefundViewSet(viewsets.ModelViewSet):
@@ -241,5 +284,19 @@ class RefundViewSet(viewsets.ModelViewSet):
         except ValidationError as e:
             return Response({
                 'message': 'Не удалось обновить возврат!',
+                'errors': e.detail
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            response = super().destroy(request, *args, **kwargs)
+            return Response({
+                'message': 'Возврат успешно удален!',
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({
+                'message': 'Не удалось удалить возврат!',
                 'errors': e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
