@@ -35,8 +35,8 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 # GET
 class ClientList(ListAPIView):
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated]
     queryset = Client.objects.all().order_by('-uploaded_at')
     serializer_class = ClientSerializer
     pagination_class = CustomPageNumberPagination
