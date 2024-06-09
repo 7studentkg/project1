@@ -18,7 +18,7 @@ payments_list = PaymentViewSet.as_view({
 
 payments_detail = PaymentViewSet.as_view({
     'get': 'retrieve',
-    'put': 'update',
+    'post': 'update',
     'delete': 'destroy'
 })
 
@@ -29,7 +29,7 @@ refunds_list = RefundViewSet.as_view({
 
 refunds_detail = RefundViewSet.as_view({
     'get': 'retrieve',
-    'put': 'update',
+    'post': 'update',
     'delete': 'destroy'
 })
 

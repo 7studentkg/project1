@@ -195,24 +195,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
             raise Http404("Файл не был найден")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class PaymentViewSet(viewsets.ModelViewSet):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
     # permission_classes = [IsAuthenticated]
