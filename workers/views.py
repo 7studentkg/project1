@@ -77,6 +77,7 @@ class ClientDetail(RetrieveUpdateDestroyAPIView):
 
 
     def update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
         try:
             response = super().update(request, *args, **kwargs)
             return Response({

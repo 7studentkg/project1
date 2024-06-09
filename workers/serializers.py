@@ -146,6 +146,12 @@ class ClientSerializer(serializers.ModelSerializer):
             'status', 'mother', 'father', 'contact', 'children',
             'uploaded_at', 'last_modified'
         ]
+        extra_kwargs = {
+            'image': {'required': False}
+        }
+
+    def validate_image(self, value):
+        return value
 
 
 
