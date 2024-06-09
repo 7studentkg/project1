@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from .filters import ClientFilter
 from rest_framework import status
-
+from django.http import FileResponse, Http404
 
 
 class CustomPageNumberPagination(PageNumberPagination):
@@ -56,28 +56,14 @@ class ClientCreate(CreateAPIView):
         try:
             response = super().create(request, *args, **kwargs)
             return Response({
-                'message': 'Анкета успешно добавлена!',
+                'message': 'Анкета клиента успешно добавлена!',
                 'data': response.data
             }, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({
-                'message': 'Не удалось добавить анкету!',
+                'message': 'Не удалось добавить анкету клиента!',
                 'errors': e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
-
-    def update(self, request, *args, **kwargs):
-        try:
-            response = super().update(request, *args, **kwargs)
-            return Response({
-                'message': 'Анкета успешно обновлена!',
-                'data': response.data
-            }, status=status.HTTP_200_OK)
-        except ValidationError as e:
-            return Response({
-                'message': 'Не удалось обновить анкету!',
-                'errors': e.detail
-            }, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 # GET / UPDATE / DELETE
@@ -109,12 +95,12 @@ class ClientDetail(RetrieveUpdateDestroyAPIView):
         try:
             response = super().destroy(request, *args, **kwargs)
             return Response({
-                'message': 'Клиент успешно удален!',
+                'message': 'Анкета клиент успешно удалена!',
                 'data': response.data
             }, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({
-                'message': 'Не удалось удалить клиента!',
+                'message': 'Не удалось удалить анкету клиента!',
                 'errors': e.detail
             }, status=status.HTTP_400_BAD_REQUEST)
 
@@ -180,17 +166,51 @@ class DocumentViewSet(viewsets.ModelViewSet):
     #     except DocumentFile.DoesNotExist:
     #         raise Http404("File does not exist")
 
+    # @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
+    # def download_file(self, request, client_id=None, pk=None, file_id=None):
+    #     try:
+    #         document = self.get_object()
+    #         file_instance = document.files.get(id=file_id)
+    #         file_path = file_instance.file.path
+    #         response = HttpResponse(open(file_path, 'rb').read(), content_type='application/octet-stream')
+    #         response['Content-Disposition'] = f'attachment; filename="{file_instance.file.name}"'
+    #         return response
+    #     except DocumentFile.DoesNotExist:
+    #         raise Http404("Файл не был найден")
+
+
     @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
     def download_file(self, request, client_id=None, pk=None, file_id=None):
         try:
             document = self.get_object()
             file_instance = document.files.get(id=file_id)
             file_path = file_instance.file.path
-            response = HttpResponse(open(file_path, 'rb').read(), content_type='application/octet-stream')
+
+            response = FileResponse(open(file_path, 'rb'), content_type='application/octet-stream')
             response['Content-Disposition'] = f'attachment; filename="{file_instance.file.name}"'
+            response['X-Success-Message'] = "Файл успешно скачан"
+
             return response
         except DocumentFile.DoesNotExist:
             raise Http404("Файл не был найден")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
