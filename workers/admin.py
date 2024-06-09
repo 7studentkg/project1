@@ -2,6 +2,7 @@ from django.contrib import admin
 from .models import Client, Document, DocumentFile, Payment, Refund, Contact, Mother, Father, Child
 from django.db.models import Sum
 from django.db.models import Q
+from signature.models import Signature
 
 class DocumentFileInline(admin.TabularInline):
     model = DocumentFile
@@ -35,10 +36,18 @@ class ChildInline(admin.TabularInline):
     model = Child
     extra = 1
 
+
+
+class SignatureInline(admin.TabularInline):
+    model = Signature
+    extra = 0
+    exclude = ('last_accessed', 'signature_date', 'signed',)
+
+
 class ClientAdmin(admin.ModelAdmin):
     inlines = [
         DocumentInline, PaymentInline, RefundInline,
-        MotherInline, FatherInline, ContactInline, ChildInline
+        MotherInline, FatherInline, ContactInline, ChildInline, SignatureInline
     ]
     list_display = [ '__str__', 'total_payments', 'total_refunds', 'documents_count_admin', 'children_count_admin', 'id']
     search_fields = ['firstName', 'currentLastName']
@@ -76,11 +85,6 @@ admin.site.register(Client, ClientAdmin)
 class DocumentFileAdmin(admin.ModelAdmin):
     list_display = ['id', 'file']
 
-# class DocumentAdmin(admin.ModelAdmin):
-#     inlines = [DocumentFileInline]
-#     list_display = ['id', 'title', 'client', 'uploaded_at']
-
-# admin.site.register(Document, DocumentAdmin)
 admin.site.register(DocumentFile, DocumentFileAdmin)
 
 # admin.site.register(Status)
