@@ -41,7 +41,7 @@ class ChildInline(admin.TabularInline):
 class SignatureInline(admin.TabularInline):
     model = Signature
     extra = 0
-    exclude = ('last_accessed', 'signature_date', 'signed',)
+    exclude = ('signature_date', 'signed',)
 
 
 class ClientAdmin(admin.ModelAdmin):

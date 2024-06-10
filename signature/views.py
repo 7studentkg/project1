@@ -5,6 +5,7 @@ from django.utils.timezone import now, timedelta
 from django.core.files.base import ContentFile
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from .serializers import SignatureSerializer
 from rest_framework import status
 from django.urls import reverse
 from .models import Signature, Client
@@ -15,76 +16,98 @@ class SignatureCreate(APIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
     # permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        client_id = request.data.get('client_id')
-        title = request.data.get('title')
+    def get(self, request, client_id):
         try:
             client = Client.objects.get(id=client_id)
-            signature = Signature.objects.create(client=client, title=title)
-            return Response({
-                'message': 'Договор успешно создан!',
-                'signature_id': signature.id,
-                'title': signature.title,
-                'client_id': signature.client.id
-            }, status=status.HTTP_201_CREATED)
+            signatures = Signature.objects.filter(client=client)
+            serializer = SignatureSerializer(signatures, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Client.DoesNotExist:
             return Response({'error': 'Клиент не найден'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    def post(self, request, client_id):
+        data = request.data.copy()
+        data['client'] = client_id  # Убедитесь, что client_id добавляется корректно
+        serializer = SignatureSerializer(data=data)
+
+
+        if serializer.is_valid():
+            signature = serializer.save()
+            contract_url = request.build_absolute_uri(reverse('client-signature', kwargs={'signature_id': signature.id}))
+            return Response({
+                'message': 'Договор успешно создан!',
+                'signature_id': signature.id,
+                'client_id': client_id,
+                'title': signature.title,
+                'created_at': signature.created_at,
+                'contract_ur': contract_url,
+
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class SignatureDetailView(APIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
     # permission_classes = [IsAuthenticated]
-
-
-    def get(self, request, signature_id):
+    def get(self, request, client_id, signature_id):
         try:
-            signature = Signature.objects.get(id=signature_id)
+
+            signature = Signature.objects.get(id=signature_id, client__id=client_id)
+            contract_url = request.build_absolute_uri(reverse('client-signature', kwargs={'signature_id': signature_id}))
             data = {
-                'title': signature.title,
                 'client_id': signature.client.id,
+                'title': signature.title,
+                'created_at': signature.created_at,
                 'signed': signature.signed,
                 'signature_date': signature.signature_date,
-                'image_url': signature.sign_image.url if signature.signed else None
+                'image_url': signature.sign_image.url if signature.signed else None,
+                'contract_ur': contract_url,
             }
             if now() > signature.created_at + timedelta(weeks=1):
-                return Response({'message': 'Срок действия для подписания договора истек!'}, status=status.HTTP_403_FORBIDDEN)
+                data['message'] = 'Срок действия для подписания договора истек!'
+                return Response(data, status=status.HTTP_403_FORBIDDEN)
 
             if signature.signed:
                 return Response(data, status=status.HTTP_200_OK)
-
             else:
                 data['message'] = 'Клиент еще не поставил подпись!'
                 return Response(data, status=status.HTTP_200_OK)
 
         except Signature.DoesNotExist:
             return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-    def put(self, request, signature_id):
+    def put(self, request, client_id, signature_id):
         try:
-            signature = Signature.objects.get(id=signature_id)
-            signature.title = request.data.get('title', signature.title)
-            signature.save()
-            return Response({'message': 'Договор обновлен'}, status=status.HTTP_200_OK)
+            signature = Signature.objects.get(id=signature_id, client_id=client_id)
+            serializer = SignatureSerializer(signature, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                contract_url = request.build_absolute_uri(reverse('client-signature', kwargs={'signature_id': signature_id}))
+                return Response({
+                    'message': 'Договор обновлен',
+                    'client_id': signature.client.id,
+                    'title': signature.title,
+                    'created_at': signature.created_at,
+                    'signed': signature.signed,
+                    'signature_date': signature.signature_date,
+                    'image_url': signature.sign_image.url if signature.signed else None,
+                    'contract_ur': contract_url,
+                    }, status=status.HTTP_200_OK)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         except Signature.DoesNotExist:
             return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-    def delete(self, request, signature_id):
+    def delete(self, request, client_id, signature_id):
         try:
-            signature = Signature.objects.get(id=signature_id)
+            signature = Signature.objects.get(id=signature_id, client_id=client_id)
             signature.delete()
             return Response({'message': 'Договор удален'}, status=status.HTTP_204_NO_CONTENT)
         except Signature.DoesNotExist:
             return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
@@ -122,23 +145,20 @@ class ClientSignatureView(APIView):
         except Exception as e:
             return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
     def post(self, request, signature_id):
         try:
             signature = Signature.objects.get(id=signature_id)
-
-            if now() > signature.created_at + timedelta(weeks=1):
-                return Response({'message': 'Срок действия для подписания договора истек!'}, status=status.HTTP_403_FORBIDDEN)
-
             if signature.signed:
                 return Response({'message': 'Вы уже отправили свою подпись!'}, status=status.HTTP_403_FORBIDDEN)
 
-            image_data = request.data.get('sign_image')
-            format, imgstr = image_data.split(';base64,')
-            ext = format.split('/')[-1]
+            # Получаем файл изображения
+            image_file = request.FILES.get('sign_image')
+            if not image_file:
+                return Response({'error': 'Файл изображения не предоставлен'}, status=status.HTTP_400_BAD_REQUEST)
 
-            image_file = ContentFile(base64.b64decode(imgstr), name=f"signature_{signature_id}.{ext}")
-
-            signature.sign_image.save(image_file.name, image_file)
+            # Сохраняем изображение в модель
+            signature.sign_image = image_file
             signature.signed = True
             signature.signature_date = now()
             signature.save()
@@ -147,52 +167,70 @@ class ClientSignatureView(APIView):
 
         except Signature.DoesNotExist:
             return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
-
         except Exception as e:
             return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-# @api_view(['GET'])
-# def sing_api_view(request, unique_id):
-#     try:
-#         signature = Signature.objects.get(unique_id=unique_id)
-#         if signature.signed:
-#             return Response({'message': 'Вы уже отправили свою подпись!'}, status=status.HTTP_403_FORBIDDEN)
+    # def post(self, request, signature_id):
+    #     try:
+    #         signature = Signature.objects.get(id=signature_id)
+    #         if signature.signed:
+    #             return Response({'message': 'Вы уже отправили свою подпись!'}, status=status.HTTP_403_FORBIDDEN)
 
-#         if now() > signature.created_at + timedelta(weeks=1):
-#             return Response({'message': 'Ссылка больше не активна!'}, status=status.HTTP_403_FORBIDDEN)
+    #         image_file = request.FILES.get('sign_image')
+    #         if image_file:
+    #             # Обработка загруженного файла
+    #             signature.sign_image.save(f"signature_{signature_id}.png", image_file)
+    #         else:
+    #             # Обработка строки base64
+    #             image_data = request.data.get('sign_image')
+    #             if not image_data:
+    #                 return Response({'error': 'Отсутствуют данные изображения'}, status=status.HTTP_400_BAD_REQUEST)
+    #             format, imgstr = image_data.split(';base64,')
+    #             image = base64.b64decode(imgstr)
+    #             signature.sign_image.save(f"signature_{signature_id}.png", ContentFile(image))
 
-#         serializer = SignatureSerializer(signature)
-#         return Response(serializer.data)
+    #         signature.signed = True
+    #         signature.signature_date = now()
+    #         signature.save()
+    #         return Response({'message': 'Подпись успешно отправлена!'}, status=status.HTTP_200_OK)
+    #     except Exception as e:
+    #         return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-#     except Signature.DoesNotExist:
-#         return Response({'error': 'Ссылка не найдена!'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# @api_view(['POST'])
-# def save_signature(request, signature_id):
-#     try:
-#         signature = Signature.objects.get(id=signature_id)
-#         if signature.signed:
-#             return Response({'message': 'Вы уже отправили свою подпись!'}, status=status.HTTP_403_FORBIDDEN)
 
-#         data = request.data
-#         image_data = data('image')
+    # def post(self, request, signature_id):
+    #     try:
+    #         signature = Signature.objects.get(id=signature_id)
+    #         if now() > signature.created_at + timedelta(weeks=1):
+    #             return Response({'message': 'Срок действия для подписания договора истек!'}, status=status.HTTP_403_FORBIDDEN)
 
-#         format, imgstr = image_data.split(';base64,')
-#         ext = format.split('/')[-1]
-#         image_file = ContentFile(base64.b64decode(imgstr), name=f"client_{uuid.uuid4()}.{ext}")
+    #         if signature.signed:
+    #             return Response({'message': 'Вы уже отправили свою подпись!'}, status=status.HTTP_403_FORBIDDEN)
 
-#         signature.image.save(image_file.name, image_file)
-#         signature.signed = True
-#         signature.signature_date = now()
-#         signature.save()
-#         return Response({'message': 'Подпись успешно отправлена!'}, status=status.HTTP_200_OK)
+    #         image_data = request.data.get('sign_image')
+    #         if not image_data:
+    #             return Response({'error': 'Отсутствуют данные изображения'}, status=status.HTTP_400_BAD_REQUEST)
 
-#     except Signature.DoesNotExist:
-#         return Response({'error': 'Signature not found'}, status=status.HTTP_404_NOT_FOUND)
+    #         try:
+    #             format, imgstr = image_data.split(';base64,')
+    #             ext = format.split('/')[-1]
+    #         except ValueError:
+    #             return Response({'error': 'Некорректные данные изображения'}, status=status.HTTP_400_BAD_REQUEST)
 
-#     except KeyError:
-#         return Response({'error': 'Incorrect data format'}, status=status.HTTP_400_BAD_REQUEST)
+    #         try:
+    #             image_file = ContentFile(base64.b64decode(imgstr), name=f"signature_{signature_id}.{ext}")
+    #         except TypeError:
+    #             return Response({'error': 'Ошибка при декодировании изображения'}, status=status.HTTP_400_BAD_REQUEST)
 
-#     except Exception as e:
-#         return Response({'error': 'Server error: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #         signature.sign_image.save(image_file.name, image_file)
+    #         signature.signed = True
+    #         signature.signature_date = now()
+    #         signature.save()
+
+    #         return Response({'message': 'Подпись успешно отправлена!'}, status=status.HTTP_200_OK)
+
+    #     except Signature.DoesNotExist:
+    #         return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
+    #     except Exception as e:
+    #         return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

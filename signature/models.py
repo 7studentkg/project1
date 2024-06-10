@@ -12,4 +12,4 @@ class Signature(models.Model):
     signed = models.BooleanField(default=False)
 
     def get_absolute_url(self):
-        return reverse('client-signature', kwargs={'signature_id': self.id})
+        return reverse('signature-detail', kwargs={'client_id': self.client.id, 'signature_id': self.id})
