@@ -84,6 +84,12 @@ class PaymentSerializer(serializers.ModelSerializer):
         validated_data['client'] = client
         return super().create(validated_data)
 
+    def update(self, instance, validated_data):
+        instance.amount = validated_data.get('amount', instance.amount)
+        instance.title = validated_data.get('title', instance.title)
+        instance.save()
+        return instance
+
 class RefundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Refund
@@ -94,6 +100,12 @@ class RefundSerializer(serializers.ModelSerializer):
         client = Client.objects.get(id=client_id)
         validated_data['client'] = client
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        instance.amount = validated_data.get('amount', instance.amount)
+        instance.title = validated_data.get('title', instance.title)
+        instance.save()
+        return instance
 
 
 

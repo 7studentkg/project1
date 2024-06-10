@@ -1,5 +1,6 @@
 from .views import DocumentViewSet, PaymentViewSet, RefundViewSet, ClientCreate, ClientList, ClientDetail
 from django.urls import path, include
+from signature.views import SignatureCreate, SignatureDetailView
 
 
 documents_list = DocumentViewSet.as_view({
@@ -39,11 +40,12 @@ urlpatterns = [
     path('main/', ClientList.as_view(), name='main-page'),
     path('client_add/', ClientCreate.as_view(), name='client-add'),
     path('client/<int:id>/', ClientDetail.as_view(), name='client-detail'),
+    path('client/<int:id>/signature/', SignatureCreate.as_view(), name='signature_create'),
+    path('client/<int:id>/signature/<int:signature_id>/', SignatureDetailView.as_view(), name='signature_detail'),
     path('client/<int:client_id>/documents/', documents_list, name='client-documents-list'),
     path('client/<int:client_id>/documents/upload/', DocumentViewSet.as_view({'post': 'upload_documents'}), name='upload_documents'),
     path('client/<int:client_id>/documents/<int:pk>/', documents_detail, name='client-document-detail'),
     path('client/<int:client_id>/documents/<int:pk>/update/', DocumentViewSet.as_view({'post': 'update_documents'}), name='update_documents'),
-    # path('client/<int:client_id>/documents/<int:pk>/files/<int:file_id>/', DocumentViewSet.as_view({'get': 'retrieve_file_info'}), name='retrieve_file_info'),
     path('client/<int:client_id>/documents/<int:pk>/files/<int:file_id>/download/', DocumentViewSet.as_view({'get': 'download_file'}), name='download_file'),
     path('client/<int:client_id>/payments/', payments_list, name='client-payment-list'),
     path('client/<int:client_id>/payments/<int:pk>/', payments_detail, name='client-payment-detail'),

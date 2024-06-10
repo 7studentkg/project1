@@ -197,7 +197,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
         client_id = self.kwargs['client_id']
         return Payment.objects.filter(client__id=client_id).order_by('id')
 
-
     def perform_create(self, serializer):
         client_id = self.kwargs['client_id']
         serializer.save(client_id=client_id)
