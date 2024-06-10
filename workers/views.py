@@ -107,12 +107,26 @@ class ClientDetail(RetrieveUpdateDestroyAPIView):
 
 
 
+class StandartSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 20
+
+    def get_paginated_response(self, data):
+        total_pages = self.page.paginator.num_pages
+        return Response({
+            'count_documents': self.page.paginator.count,
+            'count_pages': total_pages,
+            'results': data
+        })
+
 
 class DocumentViewSet(viewsets.ModelViewSet):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
     # permission_classes = [IsAuthenticated]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
+    paginationa_class = StandartSetPagination
 
     def get_queryset(self):
         client_id = self.kwargs['client_id']
@@ -156,28 +170,6 @@ class DocumentViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Не удалось обновить документ!', 'data': serializer.errors},
                         status=status.HTTP_400_BAD_REQUEST)
 
-
-    # @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)')
-    # def retrieve_file_info(self, request, client_id=None, pk=None, file_id=None):
-    #     try:
-    #         document = self.get_object()
-    #         file_instance = document.files.get(id=file_id)
-    #         serializer = DocumentFileSerializer(file_instance)
-    #         return Response(serializer.data, status=status.HTTP_200_OK)
-    #     except DocumentFile.DoesNotExist:
-    #         raise Http404("File does not exist")
-
-    # @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
-    # def download_file(self, request, client_id=None, pk=None, file_id=None):
-    #     try:
-    #         document = self.get_object()
-    #         file_instance = document.files.get(id=file_id)
-    #         file_path = file_instance.file.path
-    #         response = HttpResponse(open(file_path, 'rb').read(), content_type='application/octet-stream')
-    #         response['Content-Disposition'] = f'attachment; filename="{file_instance.file.name}"'
-    #         return response
-    #     except DocumentFile.DoesNotExist:
-    #         raise Http404("Файл не был найден")
 
 
     @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
