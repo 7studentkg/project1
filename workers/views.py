@@ -177,15 +177,32 @@ class DocumentViewSet(viewsets.ModelViewSet):
         try:
             document = self.get_object()
             file_instance = document.files.get(id=file_id)
-            file_path = file_instance.file.path
+            file_url = file_instance.file.url  # Получить URL к файлу
 
-            response = FileResponse(open(file_path, 'rb'), content_type='application/octet-stream')
-            response['Content-Disposition'] = f'attachment; filename="{file_instance.file.name}"'
-            response['X-Success-Message'] = "Файл успешно скачан"
-
-            return response
+            return Response({
+                'message': 'Файл успешно найден!',
+                'file_url': file_url
+            })
         except DocumentFile.DoesNotExist:
             raise Http404("Файл не был найден")
+
+
+    # @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
+    # def download_file(self, request, client_id=None, pk=None, file_id=None):
+    #     try:
+    #         document = self.get_object()
+    #         file_instance = document.files.get(id=file_id)
+    #         file_path = file_instance.file.path
+
+    #         # Использовать FileResponse для отправки файла
+    #         with open(file_path, 'rb') as file:
+    #             response = FileResponse(file, content_type='application/octet-stream')
+    #             response['Content-Disposition'] = f'attachment; filename="{file_instance.file.name}"'
+    #             response['X-Success-Message'] = "Файл успешно скачан"
+
+    #         return response
+    #     except DocumentFile.DoesNotExist:
+    #         raise Http404("Файл не был найден")
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
