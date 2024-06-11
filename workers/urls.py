@@ -47,6 +47,7 @@ urlpatterns = [
     path('client/<int:client_id>/documents/<int:pk>/', documents_detail, name='client-document-detail'),
     path('client/<int:client_id>/documents/<int:pk>/update/', DocumentViewSet.as_view({'post': 'update_documents'}), name='update_documents'),
     path('client/<int:client_id>/documents/<int:pk>/files/<int:file_id>/download/', DocumentViewSet.as_view({'get': 'download_file'}), name='download_file'),
+    path('client/<int:client_id>/documents/<int:pk>/files/<int:file_id>/download_two/', DocumentViewSet.as_view({'get': 'download_file_two'}), name='download_file_two'),
     path('client/<int:client_id>/payments/', payments_list, name='client-payment-list'),
     path('client/<int:client_id>/payments/<int:pk>/', payments_detail, name='client-payment-detail'),
     path('client/<int:client_id>/refunds/', refunds_list, name='client-refund-list'),
