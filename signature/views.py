@@ -14,6 +14,43 @@ from django.http import FileResponse
 from rest_framework import status
 import base64
 
+# class SignatureCreate(APIView):
+#     # authentication_classes = [SessionAuthentication, BasicAuthentication]
+#     # permission_classes = [IsAuthenticated]
+
+#     def get(self, request, client_id):
+#         try:
+#             client = Client.objects.get(id=client_id)
+#             signatures = Signature.objects.filter(client=client)
+#             serializer = SignatureSerializer(signatures, many=True)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         except Client.DoesNotExist:
+#             return Response({'error': 'Клиент не найден'}, status=status.HTTP_404_NOT_FOUND)
+#         except Exception as e:
+#             return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#     def post(self, request, client_id):
+#         data = request.data.copy()
+#         data['client'] = client_id
+#         serializer = SignatureSerializer(data=data, context={'request': request})
+
+
+#         if serializer.is_valid():
+#             signature = serializer.save()
+#             contract_url = request.build_absolute_uri(reverse('client-signature', kwargs={'signature_id': signature.id}))
+#             return Response({
+#                 'message': 'Договор успешно создан!',
+#                 'signature_id': signature.id,
+#                 'client_id': client_id,
+#                 'file_url': serializer.data['file'],
+#                 'created_at': signature.created_at,
+#                 'contract_ur': contract_url,
+
+#             }, status=status.HTTP_201_CREATED)
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 class SignatureCreate(APIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
     # permission_classes = [IsAuthenticated]
@@ -21,34 +58,49 @@ class SignatureCreate(APIView):
     def get(self, request, client_id):
         try:
             client = Client.objects.get(id=client_id)
-            signatures = Signature.objects.filter(client=client)
-            serializer = SignatureSerializer(signatures, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            signature = Signature.objects.filter(client=client).first()  # Получаем первый договор
+            if signature:
+                serializer = SignatureSerializer(signature)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response({'message': 'Договора нет!'}, status=status.HTTP_404_NOT_FOUND)
         except Client.DoesNotExist:
-            return Response({'error': 'Клиент не найден'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Клиент не найден!'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request, client_id):
-        data = request.data.copy()
-        data['client'] = client_id
-        serializer = SignatureSerializer(data=data, context={'request': request})
+        try:
+            client = Client.objects.get(id=client_id)
+            existing_signature = Signature.objects.filter(client=client).first()
+            if existing_signature:
+                serializer = SignatureSerializer(existing_signature)
+                return Response({
+                    'message': 'Договор уже существует',
+                    'signature': serializer.data
+                }, status=status.HTTP_200_OK)
 
+            data = request.data.copy()
+            data['client'] = client_id
+            serializer = SignatureSerializer(data=data, context={'request': request})
 
-        if serializer.is_valid():
-            signature = serializer.save()
-            contract_url = request.build_absolute_uri(reverse('client-signature', kwargs={'signature_id': signature.id}))
-            return Response({
-                'message': 'Договор успешно создан!',
-                'signature_id': signature.id,
-                'client_id': client_id,
-                'file_url': serializer.data['file'],
-                'created_at': signature.created_at,
-                'contract_ur': contract_url,
-
-            }, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if serializer.is_valid():
+                signature = serializer.save()
+                contract_url = request.build_absolute_uri(reverse('client-signature', kwargs={'signature_id': signature.id}))
+                return Response({
+                    'message': 'Договор успешно создан!',
+                    'signature_id': signature.id,
+                    'client_id': client_id,
+                    'file_url': serializer.data['file'],
+                    'created_at': signature.created_at,
+                    'contract_url': contract_url,
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Client.DoesNotExist:
+            return Response({'error': 'Клиент не найден'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class SignatureDetailView(APIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
