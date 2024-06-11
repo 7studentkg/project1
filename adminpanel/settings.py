@@ -55,9 +55,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# ALLOWED_HOSTS = ['testadmin312.pythonanywhere.com']
 
-# Application definition
+CORS_URLS_REGEX = r'^/(?!media/).*'
+
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
