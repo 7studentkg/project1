@@ -8,7 +8,7 @@ class SignatureAdmin(admin.ModelAdmin):
     list_display = ['client', 'created_at', 'signature_link', 'signature_date', 'signed_status']
     list_filter = ['created_at', 'signed']
     search_fields = ['client__name']
-    fields = ['client', 'title', 'sign_image']
+    fields = ['client', 'file', 'sign_image']
 
     def signature_link(self, obj):
         try:

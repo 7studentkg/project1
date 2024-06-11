@@ -9,8 +9,10 @@ from .serializers import SignatureSerializer
 from rest_framework import status
 from django.urls import reverse
 from .models import Signature, Client
+from django.core.files.storage import default_storage
+from django.http import FileResponse
+from rest_framework import status
 import base64
-
 
 class SignatureCreate(APIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
@@ -29,8 +31,8 @@ class SignatureCreate(APIView):
 
     def post(self, request, client_id):
         data = request.data.copy()
-        data['client'] = client_id  # Убедитесь, что client_id добавляется корректно
-        serializer = SignatureSerializer(data=data)
+        data['client'] = client_id
+        serializer = SignatureSerializer(data=data, context={'request': request})
 
 
         if serializer.is_valid():
@@ -40,7 +42,7 @@ class SignatureCreate(APIView):
                 'message': 'Договор успешно создан!',
                 'signature_id': signature.id,
                 'client_id': client_id,
-                'title': signature.title,
+                'file_url': serializer.data['file'],
                 'created_at': signature.created_at,
                 'contract_ur': contract_url,
 
@@ -55,18 +57,20 @@ class SignatureDetailView(APIView):
         try:
 
             signature = Signature.objects.get(id=signature_id, client__id=client_id)
+            file_url = request.build_absolute_uri(signature.file.url) if signature.file else None
+            image_url = request.build_absolute_uri(signature.sign_image.url) if signature.signed and signature.sign_image else None
             contract_url = request.build_absolute_uri(reverse('client-signature', kwargs={'signature_id': signature_id}))
             data = {
                 'client_id': signature.client.id,
-                'title': signature.title,
+                'file': file_url,
                 'created_at': signature.created_at,
                 'signed': signature.signed,
                 'signature_date': signature.signature_date,
-                'image_url': signature.sign_image.url if signature.signed else None,
+                'image_url': image_url,
                 'contract_ur': contract_url,
             }
             if now() > signature.created_at + timedelta(weeks=1):
-                data['message'] = 'Срок действия для подписания договора истек!'
+                data['message'] = 'Срок действия договора для подписания истек!'
                 return Response(data, status=status.HTTP_403_FORBIDDEN)
 
             if signature.signed:
@@ -78,34 +82,56 @@ class SignatureDetailView(APIView):
         except Signature.DoesNotExist:
             return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
 
+
     def put(self, request, client_id, signature_id):
         try:
             signature = Signature.objects.get(id=signature_id, client_id=client_id)
             serializer = SignatureSerializer(signature, data=request.data, partial=True)
             if serializer.is_valid():
+                if 'file' in request.FILES:
+
+                    if signature.file:
+
+                        file_path = signature.file.path
+                        if default_storage.exists(file_path):
+                            default_storage.delete(file_path)
+
                 serializer.save()
+                file_url = request.build_absolute_uri(signature.file.url) if signature.file else None
+                image_url = request.build_absolute_uri(signature.sign_image.url) if signature.signed and signature.sign_image else None
                 contract_url = request.build_absolute_uri(reverse('client-signature', kwargs={'signature_id': signature_id}))
                 return Response({
-                    'message': 'Договор обновлен',
+                    'message': 'Договор успешно обновлен!',
                     'client_id': signature.client.id,
-                    'title': signature.title,
+                    'file': file_url,
                     'created_at': signature.created_at,
                     'signed': signature.signed,
                     'signature_date': signature.signature_date,
-                    'image_url': signature.sign_image.url if signature.signed else None,
+                    'image_url': image_url,
                     'contract_ur': contract_url,
                     }, status=status.HTTP_200_OK)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except Signature.DoesNotExist:
-            return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Договор не найден!'}, status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, client_id, signature_id):
         try:
             signature = Signature.objects.get(id=signature_id, client_id=client_id)
+
+            if signature.file:
+                file_path = signature.file.path
+                if default_storage.exists(file_path):
+                    default_storage.delete(file_path)
+
+            if signature.sign_image:
+                sign_image_path = signature.sign_image.path
+                if default_storage.exists(sign_image_path):
+                    default_storage.delete(sign_image_path)
+
             signature.delete()
-            return Response({'message': 'Договор удален'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'message': 'Договор удален!'}, status=status.HTTP_204_NO_CONTENT)
         except Signature.DoesNotExist:
             return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -113,7 +139,7 @@ class SignatureDetailView(APIView):
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
-        return  # Bypass CSRF check
+        return
 
 class ClientSignatureView(APIView):
     authentication_classes = (CsrfExemptSessionAuthentication,)
@@ -122,20 +148,22 @@ class ClientSignatureView(APIView):
     def get(self, request, signature_id):
         try:
             signature = Signature.objects.get(id=signature_id)
-
+            file_url = request.build_absolute_uri(signature.file.url) if signature.file else None
+            image_url = request.build_absolute_uri(signature.sign_image.url) if signature.signed and signature.sign_image else None
             if now() > signature.created_at + timedelta(weeks=1):
-                return Response({'message': 'Срок действия для подписания договора истек!'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'message': 'Срок действия договора для подписания истек!'}, status=status.HTTP_403_FORBIDDEN)
 
             if signature.signed:
                 return Response({
-                    'title': signature.title,
-                    'image_url': signature.sign_image.url,
+                    'file':  file_url,
+                    'image_url': image_url,
+                    'dowload_file': file_url,
                     'message': 'Вы уже поставили свою подпись!'
                 }, status=status.HTTP_200_OK)
 
             else:
                 return Response({
-                    'title': signature.title,
+                    'file': file_url,
                     'message': 'Пожалуйста, ознакомтесь с условиями договора и поставьте свою подпись!'
                 }, status=status.HTTP_200_OK)
 
@@ -149,15 +177,26 @@ class ClientSignatureView(APIView):
     def post(self, request, signature_id):
         try:
             signature = Signature.objects.get(id=signature_id)
-            if signature.signed:
-                return Response({'message': 'Вы уже отправили свою подпись!'}, status=status.HTTP_403_FORBIDDEN)
+            file_url = request.build_absolute_uri(signature.file.url) if signature.file else None
+            image_url = request.build_absolute_uri(signature.sign_image.url) if signature.signed and signature.sign_image else None
 
-            # Получаем файл изображения
+            if now() > signature.created_at + timedelta(weeks=1):
+                return Response({'message': 'Срок действия договора для подписания истек!'}, status=status.HTTP_403_FORBIDDEN)
+
+            if signature.signed:
+                return Response({
+                    'file':  file_url,
+                    'image_url': image_url,
+                    'dowload_file': file_url,
+                    'message': 'Вы уже поставили свою подпись!'
+                }, status=status.HTTP_403_FORBIDDEN)
+
+
             image_file = request.FILES.get('sign_image')
             if not image_file:
                 return Response({'error': 'Файл изображения не предоставлен'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Сохраняем изображение в модель
+
             signature.sign_image = image_file
             signature.signed = True
             signature.signature_date = now()
@@ -169,6 +208,10 @@ class ClientSignatureView(APIView):
             return Response({'error': 'Договор не найден'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
 
     # def post(self, request, signature_id):
     #     try:

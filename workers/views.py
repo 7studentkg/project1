@@ -19,7 +19,7 @@ from django.http import FileResponse, Http404
 
 
 class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 2
+    page_size = 30
     page_size_query_param = 'page_size'
     max_page_size = 100
 
@@ -177,7 +177,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         try:
             document = self.get_object()
             file_instance = document.files.get(id=file_id)
-            file_url = file_instance.file.url  # Получить URL к файлу
+            file_url = request.build_absolute_uri(file_instance.file.url)
 
             return Response({
                 'message': 'Файл успешно найден!',

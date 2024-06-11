@@ -6,18 +6,23 @@ class SignatureSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Signature
-        fields = ['id', 'client', 'client_name', 'title', 'sign_image', 'created_at', 'signature_date', 'signed']
+        fields = ['id', 'client', 'client_name', 'file', 'sign_image', 'created_at', 'signature_date', 'signed']
         read_only_fields = ['id', 'created_at', 'signature_date', 'signed']
 
-    def validate_title(self, value):
+    def get_file(self, obj):
+        if obj.file:
+            return self.context['request'].build_absolute_uri(obj.file.url)
+        return None
+
+    def validate_file(self, value):
         if not value:
-            raise serializers.ValidationError("title обязательно поле для заполнения!")
+            raise serializers.ValidationError("file обязательно поле для заполнения!")
         return value
 
     def create(self, validated_data):
         return Signature.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        instance.title = validated_data.get('title', instance.title)
+        instance.file = validated_data.get('file', instance.file)
         instance.save()
         return instance
