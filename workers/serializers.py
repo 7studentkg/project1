@@ -1,11 +1,20 @@
 from .models import Client, Document, DocumentFile, Payment, Refund, Mother, Father, Contact, Child
 from rest_framework import serializers
 import json
+import mimetypes
+
 
 class DocumentFileSerializer(serializers.ModelSerializer):
+    file_name = serializers.SerializerMethodField()
+
     class Meta:
         model = DocumentFile
-        fields = ['id', 'file']
+        fields = ('id', 'file', 'file_name')
+
+    def get_file_name(self, obj):
+        return obj.file.name.split('/')[-1]
+
+
 
 class DocumentSerializer(serializers.ModelSerializer):
     files = DocumentFileSerializer(many=True, read_only=True)
