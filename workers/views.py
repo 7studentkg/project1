@@ -173,7 +173,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 
     @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
-    def download_file_two(self, request, pk=None, file_id=None):
+    def download_file_two(self, request, client_id=None, pk=None, file_id=None):
         try:
             document = self.get_object()
             file_instance = document.files.get(id=file_id)
@@ -194,10 +194,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
             file_instance = document.files.get(id=file_id)
             file_url = request.build_absolute_uri(file_instance.file.url)
 
-            return Response({
-                'message': 'Файл успешно найден!',
-                'file_url': file_url
-            })
+            response = FileResponse(file_instance.file.open('rb'), as_attachment=True, filename=file_instance.file.name)
+            return response
+
+            # return Response({
+            #     'message': 'Файл успешно найден!',
+            #     'file_url': file_url
+            # })
 
         except DocumentFile.DoesNotExist:
             raise Http404("Файл не был найден")

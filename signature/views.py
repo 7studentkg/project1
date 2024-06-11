@@ -45,6 +45,7 @@ class SignatureCreate(APIView):
                 }, status=status.HTTP_404_NOT_FOUND)
         except Client.DoesNotExist:
             return Response({'error': 'Клиент не найден!'}, status=status.HTTP_404_NOT_FOUND)
+
         except Exception as e:
             return Response({'error': 'Ошибка сервера: ' + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
