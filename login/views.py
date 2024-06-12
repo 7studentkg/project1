@@ -19,7 +19,10 @@ class LoginAPIView(APIView):
             if user is not None:
                 login(request, user)
                 token, created = Token.objects.get_or_create(user=user)
-                return Response({"message": "Успешный вход в систему"}, status=status.HTTP_200_OK)
+                return Response({
+                            "message": "Успешный вход в систему",
+                            "token": token.key
+                            }, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Неправильные учетные данные"}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
