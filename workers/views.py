@@ -195,12 +195,12 @@ class DocumentViewSet(viewsets.ModelViewSet):
             file_url = request.build_absolute_uri(file_instance.file.url)
 
             response = FileResponse(file_instance.file.open('rb'), as_attachment=True, filename=file_instance.file.name)
-            return response
 
-            # return Response({
-            #     'message': 'Файл успешно найден!',
-            #     'file_url': file_url
-            # })
+
+            return Response({
+                'message': 'Файл успешно найден!',
+                'file_url': file_url
+            })
 
         except DocumentFile.DoesNotExist:
             raise Http404("Файл не был найден")
