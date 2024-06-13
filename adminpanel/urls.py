@@ -24,10 +24,10 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('login/', include('login.urls')),
-    path('logout/', LogoutAPIView.as_view(), name='logout'),
-    path('contract_for_services/', include('signature.urls')),
-    path('workers/', include('workers.urls')),
+    path('api/v1/login/', include('login.urls')),
+    path('api/v1/logout/', LogoutAPIView.as_view(), name='logout'),
+    path('api/v1/contract_for_services/', include('signature.urls')),
+    path('api/v1/workers/', include('workers.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
