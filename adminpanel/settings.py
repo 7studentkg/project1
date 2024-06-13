@@ -33,6 +33,7 @@ CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000/',
                         'http://16.170.253.135',
                         'http://16.170.253.135:80',
                         'http://13.60.81.114',
+                        'http://13.60.32.65',
                         'https://togetherrecruitment.kg'
                         ]
 
