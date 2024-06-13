@@ -6,6 +6,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializer import LoginSerializer
 from rest_framework import status
+from django.middleware.csrf import get_token
+
+
+
 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -19,9 +23,11 @@ class LoginAPIView(APIView):
             if user is not None:
                 login(request, user)
                 token, created = Token.objects.get_or_create(user=user)
+                csrf_token = get_token(request)
                 return Response({
                             "message": "Успешный вход в систему",
-                            "token": token.key
+                            "token": token.key,
+                            "csrf_token": csrf_token
                             }, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Неправильные учетные данные"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -29,7 +35,7 @@ class LoginAPIView(APIView):
 
 
 class LogoutAPIView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
