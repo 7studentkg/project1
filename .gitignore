@@ -7,16 +7,16 @@ __pycache__
 media
 
 
-workers/migrations/*
-workers/migrations/!__init__.py
+# workers/migrations/*
+# workers/migrations/!__init__.py
 
-signature/migrations/*
-signature/migrations/!__init__.py
-**migrations/00*.py
-signature/migrations/__init__.py
-signature/migrations/0001_initial.py
+# signature/migrations/*
+# signature/migrations/!__init__.py
+# **migrations/00*.py
+# signature/migrations/__init__.py
+# signature/migrations/0001_initial.py
 
-migrations
+# migrations
 
 .env
 .venv
