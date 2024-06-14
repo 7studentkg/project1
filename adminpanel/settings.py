@@ -33,7 +33,7 @@ CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000/',
                         'http://16.170.253.135',
                         'http://16.170.253.135:80',
                         'http://13.60.81.114',
-                        'http://16.170.235.163',
+                        'http://16.170.253.199 ',
                         'https://togetherrecruitment.kg'
                         ]
 
@@ -115,8 +115,12 @@ WSGI_APPLICATION = 'adminpanel.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': config('POSTGRES_DB'),
+        'USER': config('POSTGRES_USER'),
+        'PASSWORD': config('POSTGRES_PASSWORD'),
+        'HOST': config('POSTGRES_HOST'),
+        'PORT': config('POSTGRES_PORT', cast=int),
     }
 }
 

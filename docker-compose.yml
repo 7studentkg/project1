@@ -10,6 +10,16 @@ services:
     restart: always
     command: sh -c "python3 manage.py makemigrations && python3 manage.py migrate && gunicorn adminpanel.wsgi:application --bind 0.0.0.0:8000"
 
+
+  db:
+    image: postgres:15-alpine
+    container_name: togetherrecruitment.db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+
   nginx:
     image: nginx
     ports:
@@ -29,3 +39,4 @@ services:
 volumes:
   back_static:
   back_media:
+  postgres_data:
