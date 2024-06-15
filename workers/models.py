@@ -77,7 +77,8 @@ class Client(models.Model):
 
     country = models.TextField(verbose_name="Страны") # СТРАНЫ
     status = models.CharField(max_length=100, verbose_name="Статус")
-
+    referal = models.CharField(max_length=300, verbose_name="От кого")
+    workers = models.CharField(max_length=300, verbose_name="Специалист")
 
     uploaded_at = models.DateTimeField(auto_now_add=True) # ДАТА ДОБАВЛЕНИЯ
     last_modified = models.DateTimeField(auto_now=True) # ДАТА ПОСЛЕДНЕГО ИЗМЕНЕНИЯ

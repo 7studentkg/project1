@@ -164,7 +164,7 @@ class ClientSerializer(serializers.ModelSerializer):
             'id', 'image', 'birthLastName', 'currentLastName', 'firstName', 'birthDate', 'birthPlace', 'residence',
             'passportNumber', 'passportIssueDate', 'passportExpirationDate', 'passportIssuingAuthority',
             'email', 'password', 'height', 'weight', 'englishLevel', 'familyStatus', 'country',
-            'status', 'mother', 'father', 'contact', 'children',
+            'status', 'mother', 'father', 'contact', 'children', 'referal', 'workers',
             'uploaded_at', 'last_modified'
         ]
         extra_kwargs = {

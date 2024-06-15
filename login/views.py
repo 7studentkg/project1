@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.authentication import BasicAuthentication, TokenAuthentication, SessionAuthentication
 from rest_framework.views import APIView
 from .serializer import LoginSerializer
 from rest_framework import status
@@ -36,14 +36,19 @@ class LoginAPIView(APIView):
 
 
 class LogoutAPIView(APIView):
-    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    authentication_classes = [BasicAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
+
             token = Token.objects.get(user=request.user)
             token.delete()
             logout(request)
-            return Response({"message": "Успешный выход из системы"}, status=status.HTTP_200_OK)
+
+            response = Response({"message": "Успешный выход из системы"}, status=status.HTTP_200_OK)
+            response.delete_cookie("csrftoken")
+
+            return response
         except Token.DoesNotExist:
-            return Response({"error": "Токен не найден"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Не получилось выйти!"}, status=status.HTTP_400_BAD_REQUEST)
