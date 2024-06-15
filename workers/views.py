@@ -19,7 +19,7 @@ from django.http import FileResponse, Http404
 
 
 class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 30
+    page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
@@ -34,8 +34,8 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 # GET
 class ClientList(ListAPIView):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Client.objects.all().order_by('-uploaded_at')
     serializer_class = ClientSerializer
     pagination_class = CustomPageNumberPagination
@@ -46,8 +46,8 @@ class ClientList(ListAPIView):
 # POST
 @method_decorator(csrf_exempt, name='dispatch' )
 class ClientCreate(CreateAPIView):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     authentication_classes = (CsrfExemptSessionAuthentication,)
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
@@ -69,8 +69,8 @@ class ClientCreate(CreateAPIView):
 # GET / UPDATE / DELETE
 @method_decorator(csrf_exempt, name='dispatch')
 class ClientDetail(RetrieveUpdateDestroyAPIView):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
     lookup_field = 'id'
@@ -122,8 +122,8 @@ class StandartSetPagination(PageNumberPagination):
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
     paginationa_class = StandartSetPagination
@@ -206,27 +206,9 @@ class DocumentViewSet(viewsets.ModelViewSet):
             raise Http404("Файл не был найден")
 
 
-    # @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
-    # def download_file(self, request, client_id=None, pk=None, file_id=None):
-    #     try:
-    #         document = self.get_object()
-    #         file_instance = document.files.get(id=file_id)
-    #         file_path = file_instance.file.path
-
-    #         # Использовать FileResponse для отправки файла
-    #         with open(file_path, 'rb') as file:
-    #             response = FileResponse(file, content_type='application/octet-stream')
-    #             response['Content-Disposition'] = f'attachment; filename="{file_instance.file.name}"'
-    #             response['X-Success-Message'] = "Файл успешно скачан"
-
-    #         return response
-    #     except DocumentFile.DoesNotExist:
-    #         raise Http404("Файл не был найден")
-
-
 class PaymentViewSet(viewsets.ModelViewSet):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = PaymentSerializer
 
     def get_queryset(self):
@@ -279,8 +261,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 
 class RefundViewSet(viewsets.ModelViewSet):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    authentication_classes = [SessionAuthentication, BasicAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = RefundSerializer
 
     def get_queryset(self):

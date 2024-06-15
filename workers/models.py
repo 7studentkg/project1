@@ -72,7 +72,7 @@ class Client(models.Model):
     LEVEL_CHOICES = [('Новичок', 'Новичок'), ('Средний', 'Средний'), ('Отличный', 'Отличный')]
     englishLevel = models.CharField(max_length=50, choices=LEVEL_CHOICES, default='Новичок', verbose_name="Уровень английского языка")
 
-    FAMILY_STATUS = [('Холост/Не замужем', 'Холост/Не замужем'), ('Женат/Замужем', 'Женат/Замужем'), ('Разведен(а', 'Разведен(а)')]
+    FAMILY_STATUS = [('Холост/Не замужем', 'Холост/Не замужем'), ('Женат/Замужем', 'Женат/Замужем'), ('Разведен(а)', 'Разведен(а)')]
     familyStatus = models.CharField(max_length=50, choices=FAMILY_STATUS, default='Холост/Не замужем', verbose_name="Семейный статус")
 
     country = models.TextField(verbose_name="Страны") # СТРАНЫ
