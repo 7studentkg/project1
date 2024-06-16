@@ -1,7 +1,6 @@
 from .serializers import ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer, DocumentFileSerializer
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
-# from rest_framework.authentication import SessionAuthentication, BasicAuthentication
-from rest_framework.authentication import BasicAuthentication, TokenAuthentication, SessionAuthentication
+from rest_framework.authentication import TokenAuthentication
 from .models import Client, Document, Payment, Refund, DocumentFile
 from django_filters.rest_framework import DjangoFilterBackend
 from .authentication import CsrfExemptSessionAuthentication
@@ -35,7 +34,7 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 # GET
 class ClientList(ListAPIView):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = Client.objects.all().order_by('-uploaded_at')
     serializer_class = ClientSerializer
@@ -47,7 +46,7 @@ class ClientList(ListAPIView):
 # POST
 
 class ClientCreate(CreateAPIView):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
@@ -68,8 +67,7 @@ class ClientCreate(CreateAPIView):
 
 # GET / UPDATE / DELETE
 class ClientDetail(RetrieveUpdateDestroyAPIView):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # authentication_classes = [TokenAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
@@ -122,7 +120,7 @@ class StandartSetPagination(PageNumberPagination):
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
@@ -207,7 +205,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = PaymentSerializer
 
@@ -261,7 +259,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 
 class RefundViewSet(viewsets.ModelViewSet):
-    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = RefundSerializer
 
