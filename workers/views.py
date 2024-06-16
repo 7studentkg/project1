@@ -1,6 +1,7 @@
 from .serializers import ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer, DocumentFileSerializer
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+# from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+from rest_framework.authentication import BasicAuthentication, TokenAuthentication, SessionAuthentication
 from .models import Client, Document, Payment, Refund, DocumentFile
 from django_filters.rest_framework import DjangoFilterBackend
 from .authentication import CsrfExemptSessionAuthentication
@@ -35,7 +36,7 @@ class CustomPageNumberPagination(PageNumberPagination):
 # GET
 class ClientList(ListAPIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     queryset = Client.objects.all().order_by('-uploaded_at')
     serializer_class = ClientSerializer
     pagination_class = CustomPageNumberPagination
@@ -44,11 +45,10 @@ class ClientList(ListAPIView):
 
 
 # POST
-@method_decorator(csrf_exempt, name='dispatch' )
+
 class ClientCreate(CreateAPIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
-    authentication_classes = (CsrfExemptSessionAuthentication,)
+    permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
 
@@ -67,10 +67,10 @@ class ClientCreate(CreateAPIView):
 
 
 # GET / UPDATE / DELETE
-@method_decorator(csrf_exempt, name='dispatch')
 class ClientDetail(RetrieveUpdateDestroyAPIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
     lookup_field = 'id'
@@ -123,10 +123,10 @@ class StandartSetPagination(PageNumberPagination):
 
 class DocumentViewSet(viewsets.ModelViewSet):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     queryset = Document.objects.all()
     serializer_class = DocumentSerializer
-    paginationa_class = StandartSetPagination
+    pagination_class = StandartSetPagination
 
     def get_queryset(self):
         client_id = self.kwargs['client_id']
@@ -208,7 +208,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 class PaymentViewSet(viewsets.ModelViewSet):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = PaymentSerializer
 
     def get_queryset(self):
@@ -262,7 +262,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
 class RefundViewSet(viewsets.ModelViewSet):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     serializer_class = RefundSerializer
 
     def get_queryset(self):

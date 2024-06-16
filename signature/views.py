@@ -18,7 +18,7 @@ import base64
 
 class SignatureCreate(APIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, client_id):
         try:
@@ -91,7 +91,7 @@ class SignatureCreate(APIView):
 
 class SignatureDetailView(APIView):
     # authentication_classes = [SessionAuthentication, BasicAuthentication]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     def get(self, request, client_id, signature_id):
         try:
 

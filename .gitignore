@@ -5,6 +5,7 @@ __pycache__
 
 
 media
+back_media
 
 
 # workers/migrations/*
@@ -28,3 +29,5 @@ myenv
 myenv
 
 templates
+
+db.sqlite3
