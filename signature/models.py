@@ -14,7 +14,6 @@ def get_sign_image_path(instance, filename):
 
 class Signature(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='signature_client')
-    # title = models.TextField()
     file = models.FileField(upload_to=get_signature_path, max_length=300)
     sign_image = models.ImageField(upload_to=get_sign_image_path, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

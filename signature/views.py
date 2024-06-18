@@ -185,22 +185,26 @@ class ClientSignatureView(APIView):
     def get(self, request, signature_id):
         try:
             signature = Signature.objects.get(id=signature_id)
-            file_url = request.build_absolute_uri(signature.file.url) if signature.file else None
-            image_url = request.build_absolute_uri(signature.sign_image.url) if signature.signed and signature.sign_image else None
+            # file_url = request.build_absolute_uri(signature.file.url) if signature.file else None
+            # image_url = request.build_absolute_uri(signature.sign_image.url) if signature.signed and signature.sign_image else None
+
+            serializer = SignatureSerializer(signature, context={'request': request})
+            data = serializer.data
+
             if now() > signature.created_at + timedelta(weeks=1):
                 return Response({'message': 'Срок действия договора для подписания истек!'}, status=status.HTTP_403_FORBIDDEN)
 
             if signature.signed:
                 return Response({
-                    'file':  file_url,
-                    'image_url': image_url,
-                    'dowload_file': file_url,
+                    'file':  data.get('file_url'),
+                    'image_url': data.get('sign_image_url'),
+                    'dowload_file': data.get('file_url'),
                     'message': 'Вы уже поставили свою подпись!'
                 }, status=status.HTTP_200_OK)
 
             else:
                 return Response({
-                    'file': file_url,
+                    'file': data.get('file_url'),
                     'message': 'Пожалуйста, ознакомтесь с условиями договора и поставьте свою подпись!'
                 }, status=status.HTTP_200_OK)
 
@@ -214,17 +218,20 @@ class ClientSignatureView(APIView):
     def post(self, request, signature_id):
         try:
             signature = Signature.objects.get(id=signature_id)
-            file_url = request.build_absolute_uri(signature.file.url) if signature.file else None
-            image_url = request.build_absolute_uri(signature.sign_image.url) if signature.signed and signature.sign_image else None
+            # file_url = request.build_absolute_uri(signature.file.url) if signature.file else None
+            # image_url = request.build_absolute_uri(signature.sign_image.url) if signature.signed and signature.sign_image else None
+
+            serializer = SignatureSerializer(signature, context={'request': request})
+            data = serializer.data
 
             if now() > signature.created_at + timedelta(weeks=1):
                 return Response({'message': 'Срок действия договора для подписания истек!'}, status=status.HTTP_403_FORBIDDEN)
 
             if signature.signed:
                 return Response({
-                    'file':  file_url,
-                    'image_url': image_url,
-                    'dowload_file': file_url,
+                    'file':  data.get('file_url'),
+                    'image_url': data.get('sign_image_url'),
+                    'dowload_file': data.get('file_url'),
                     'message': 'Вы уже поставили свою подпись!'
                 }, status=status.HTTP_403_FORBIDDEN)
 
