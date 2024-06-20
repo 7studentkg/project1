@@ -1,24 +1,28 @@
 from django.contrib import admin
-from .models import Client, Document, DocumentFile, Payment, Refund, Contact, Mother, Father, Child
+from .models import Client, Document, DocumentFile, Payment, Refund, Contact, Mother, Father, Child, PartnerClass, Partner
 from django.db.models import Sum
 from django.db.models import Q
 from signature.models import Signature
 
+class PartnerInline(admin.TabularInline):
+    model = Partner
+    extra = 0
+
 class DocumentFileInline(admin.TabularInline):
     model = DocumentFile
-    extra = 1
+    extra = 0
 
 class DocumentInline(admin.TabularInline):
     model = Document
-    extra = 1
+    extra = 0
 
 class PaymentInline(admin.TabularInline):
     model = Payment
-    extra = 1
+    extra = 0
 
 class RefundInline(admin.TabularInline):
     model = Refund
-    extra = 1
+    extra = 0
 
 class MotherInline(admin.TabularInline):
     model = Mother
@@ -34,7 +38,7 @@ class ContactInline(admin.TabularInline):
 
 class ChildInline(admin.TabularInline):
     model = Child
-    extra = 1
+    extra = 0
 
 
 
@@ -46,7 +50,7 @@ class SignatureInline(admin.TabularInline):
 
 class ClientAdmin(admin.ModelAdmin):
     inlines = [
-        DocumentInline, PaymentInline, RefundInline,
+        DocumentInline, PaymentInline, RefundInline, PartnerInline,
         MotherInline, FatherInline, ContactInline, ChildInline, SignatureInline
     ]
     list_display = [ '__str__', 'total_payments', 'total_refunds', 'documents_count_admin', 'children_count_admin', 'id']
@@ -86,6 +90,10 @@ class DocumentFileAdmin(admin.ModelAdmin):
     list_display = ['id', 'file']
 
 admin.site.register(DocumentFile, DocumentFileAdmin)
+
+@admin.register(PartnerClass)
+class PartnerClassAdmin(admin.ModelAdmin):
+    list_display = ['name', 'id']
 
 # admin.site.register(Status)
 # admin.site.register(Country)

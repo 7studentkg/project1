@@ -1,4 +1,4 @@
-from .serializers import ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer, DocumentFileSerializer
+from .serializers import ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer, ClientListSerializer
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 from rest_framework.authentication import TokenAuthentication
 from .models import Client, Document, Payment, Refund, DocumentFile
@@ -36,11 +36,23 @@ class CustomPageNumberPagination(PageNumberPagination):
 class ClientList(ListAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = Client.objects.all().order_by('-uploaded_at')
-    serializer_class = ClientSerializer
+    queryset = Client.objects.all()
+    serializer_class = ClientListSerializer
     pagination_class = CustomPageNumberPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClientFilter
+    ordering_fields = ['uploaded_at']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        ordering = self.request.query_params.get('ordering', None)
+        if ordering == 'old':
+            queryset = queryset.order_by('uploaded_at')
+        elif ordering == 'new':
+            queryset = queryset.order_by('-uploaded_at')
+        else:
+            queryset = queryset.order_by('-uploaded_at')
+        return queryset
 
 
 # POST

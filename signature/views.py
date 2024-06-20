@@ -198,7 +198,6 @@ class ClientSignatureView(APIView):
                 return Response({
                     'file':  data.get('file_url'),
                     'image_url': data.get('sign_image_url'),
-                    'dowload_file': data.get('file_url'),
                     'message': 'Вы уже поставили свою подпись!'
                 }, status=status.HTTP_200_OK)
 
@@ -231,7 +230,6 @@ class ClientSignatureView(APIView):
                 return Response({
                     'file':  data.get('file_url'),
                     'image_url': data.get('sign_image_url'),
-                    'dowload_file': data.get('file_url'),
                     'message': 'Вы уже поставили свою подпись!'
                 }, status=status.HTTP_403_FORBIDDEN)
 

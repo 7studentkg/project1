@@ -22,3 +22,7 @@ class Signature(models.Model):
 
     def get_absolute_url(self):
         return reverse('signature-detail', kwargs={'client_id': self.client.id, 'signature_id': self.id})
+
+    class Meta:
+        verbose_name = "Подпись"
+        verbose_name_plural = "Подписи"

@@ -1,7 +1,8 @@
-from .models import Client, Document, DocumentFile, Payment, Refund, Mother, Father, Contact, Child
+from .models import Client, Document, DocumentFile, Payment, Refund, Mother, Father, Contact, Child, Partner, PartnerClass
 from rest_framework import serializers
 import json
 import mimetypes
+
 
 
 class DocumentFileSerializer(serializers.ModelSerializer):
@@ -31,7 +32,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Document
-        fields = ['id', 'title', 'uploaded_at', 'files', 'uploaded_files', 'delete_list']
+        fields = ['id', 'title', 'uploaded_at', 'last_modified', 'files', 'uploaded_files', 'delete_list']
 
     def create(self, validated_data):
         files_data = validated_data.pop('uploaded_files')
@@ -49,10 +50,6 @@ class DocumentSerializer(serializers.ModelSerializer):
         representation['files'] = DocumentFileSerializer(instance.files.all(), many=True).data
         return representation
 
-    # def to_representation(self, instance):
-    #     representation = super().to_representation(instance)
-    #     representation['file'] = urllib.parse.unquote(representation['file'])
-    #     return representation
 
     def update(self, instance, validated_data):
         files_data = validated_data.pop('uploaded_files', [])
@@ -85,7 +82,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Payment
-        fields = ['id', 'amount', 'title', 'uploaded_at']
+        fields = ['id', 'amount', 'title', 'file_check', 'uploaded_at', 'last_modified']
 
     def create(self, validated_data):
         client_id = self.context['view'].kwargs['client_id']
@@ -96,13 +93,14 @@ class PaymentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.amount = validated_data.get('amount', instance.amount)
         instance.title = validated_data.get('title', instance.title)
+        instance.file_check = validated_data.get('file_check', instance.file_check)
         instance.save()
         return instance
 
 class RefundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Refund
-        fields = ['id', 'amount', 'title', 'uploaded_at']
+        fields = ['id', 'amount', 'title', 'file_check', 'uploaded_at', 'last_modified']
 
     def create(self, validated_data):
         client_id = self.context['view'].kwargs['client_id']
@@ -113,10 +111,45 @@ class RefundSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.amount = validated_data.get('amount', instance.amount)
         instance.title = validated_data.get('title', instance.title)
+        instance.file_check = validated_data.get('file_check', instance.file_check)
         instance.save()
         return instance
 
+# class PaymentSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Payment
+#         fields = ['id', 'amount', 'title', 'file_check', 'uploaded_at', 'last_modified']
 
+#     def create(self, validated_data):
+#         client_id = self.context.get('client_id')
+#         client = Client.objects.get(id=client_id)
+#         validated_data['client'] = client
+#         return super().create(validated_data)
+
+#     def update(self, instance, validated_data):
+#         instance.amount = validated_data.get('amount', instance.amount)
+#         instance.title = validated_data.get('title', instance.title)
+#         instance.file_check = validated_data.get('file_check', instance.file_check)
+#         instance.save()
+#         return instance
+
+# class RefundSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Refund
+#         fields = ['id', 'amount', 'title', 'file_check', 'uploaded_at', 'last_modified']
+
+#     def create(self, validated_data):
+#         client_id = self.context.get('client_id')
+#         client = Client.objects.get(id=client_id)
+#         validated_data['client'] = client
+#         return super().create(validated_data)
+
+#     def update(self, instance, validated_data):
+#         instance.amount = validated_data.get('amount', instance.amount)
+#         instance.title = validated_data.get('title', instance.title)
+#         instance.file_check = validated_data.get('file_check', instance.file_check)
+#         instance.save()
+#         return instance
 
 class MotherSerializer(serializers.ModelSerializer):
     class Meta:
@@ -142,31 +175,57 @@ class ChildSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'birthDate']
 
 
+class ClientListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Client
+        fields = ['id', 'currentLastName', 'firstName', 'birthDate', 'country', 'status']
+
+
+
+class PartnerClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PartnerClass
+        fields = ['id', 'name']
+
+class PartnerSerializer(serializers.ModelSerializer):
+    name_partner = serializers.SlugRelatedField(
+        queryset=PartnerClass.objects.all(),
+        slug_field='name'
+    )
+    class Meta:
+        model = Partner
+        fields = ['id', 'name_partner', 'text']
+
+
+
+
 class ClientSerializer(serializers.ModelSerializer):
-    # country = serializers.PrimaryKeyRelatedField(
-    #     queryset=Country.objects.all(),
-    #     many=True
-    # )
-    # status = serializers.PrimaryKeyRelatedField(
-    #     queryset=Status.objects.all(),
-    #     read_only=False
-    # )
+        # country = serializers.PrimaryKeyRelatedField(
+        #     queryset=Country.objects.all(),
+        #     many=True
+        # )
+        # status = serializers.PrimaryKeyRelatedField(
+        #     queryset=Status.objects.all(),
+        #     read_only=False
+        # )
 
     mother = MotherSerializer(required=False)
     father = FatherSerializer(required=False)
     contact = ContactSerializer(required=False)
     children = ChildSerializer(many=True, required=False)
+    partners = PartnerSerializer(many=True, required=False, read_only=True)
+
 
 
     class Meta:
         model = Client
-        fields = [
-            'id', 'image', 'birthLastName', 'currentLastName', 'firstName', 'birthDate', 'birthPlace', 'residence',
-            'passportNumber', 'passportIssueDate', 'passportExpirationDate', 'passportIssuingAuthority',
-            'email', 'password', 'height', 'weight', 'englishLevel', 'familyStatus', 'country',
-            'status', 'mother', 'father', 'contact', 'children', 'referal', 'workers',
-            'uploaded_at', 'last_modified'
-        ]
+        fields = ['id', 'image', 'birthLastName', 'currentLastName', 'firstName', 'birthDate', 'birthPlace',
+                  'residence', 'passportNumber', 'passportIssueDate', 'passportExpirationDate',
+                  'passportIssuingAuthority', 'email', 'password', 'height', 'weight', 'englishLevel',
+                  'familyStatus', 'country', 'education', 'driving_licence', 'experience', 'partners',
+                  'status', 'mother', 'father', 'contact', 'children', 'referal', 'workers', 'notes',
+                  'uploaded_at', 'last_modified' ]
+
         extra_kwargs = {
             'image': {'required': False}
         }
@@ -181,6 +240,9 @@ class ClientSerializer(serializers.ModelSerializer):
         father_data = self.initial_data.get('father')
         contact_data = self.initial_data.get('contact')
         children_data = self.initial_data.get('children', [])
+        partners_data = self.initial_data.get('partners', [])
+        # related_clients_data = self.initial_data.get('related_clients', [])
+
 
         if isinstance(mother_data, str):
             mother_data = json.loads(mother_data)
@@ -190,6 +252,17 @@ class ClientSerializer(serializers.ModelSerializer):
             contact_data = json.loads(contact_data)
         if isinstance(children_data, str):
             children_data = json.loads(children_data)
+
+        if isinstance(partners_data, str):
+            partners_data = json.loads(partners_data)
+
+        # if isinstance(related_clients_data, str):
+        #     related_clients_data = [int(related_clients_data)]
+
+
+        # validated_data.pop('related_clients', None)
+        # related_clients_data = [int(client_id) for client_id in related_clients_data]
+
 
         client = Client.objects.create(**validated_data)
 
@@ -203,6 +276,18 @@ class ClientSerializer(serializers.ModelSerializer):
         for child_data in children_data:
             Child.objects.create(client=client, **child_data)
 
+
+        for partner_data in partners_data:
+            name_partner_name = partner_data.pop('name_partner', None)
+            name_partner = PartnerClass.objects.get(name=name_partner_name) if name_partner_name else None
+            Partner.objects.create(client=client, name_partner=name_partner, **partner_data)
+
+
+
+        # if related_clients_data:
+        #     related_clients = [Client.objects.get(id=client_id) for client_id in related_clients_data]
+        #     client.related_clients.set(related_clients)
+
         return client
 
     def update(self, instance, validated_data):
@@ -210,6 +295,10 @@ class ClientSerializer(serializers.ModelSerializer):
         father_data = self.initial_data.get('father', None)
         contact_data = self.initial_data.get('contact', None)
         children_data = self.initial_data.get('children', [])
+        partners_data = self.initial_data.get('partners', [])
+        # related_clients_data = self.initial_data.get('related_clients', [])
+
+
 
         if isinstance(mother_data, str):
             mother_data = json.loads(mother_data)
@@ -219,6 +308,12 @@ class ClientSerializer(serializers.ModelSerializer):
             contact_data = json.loads(contact_data)
         if isinstance(children_data, str):
             children_data = json.loads(children_data)
+
+        if isinstance(partners_data, str):
+            partners_data = json.loads(partners_data)
+
+        # if isinstance(related_clients_data, str):
+        #     related_clients_data = json.loads(related_clients_data)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -245,6 +340,30 @@ class ClientSerializer(serializers.ModelSerializer):
                 child.save()
             else:
                 Child.objects.create(client=instance, **child_data)
+
+        existing_partner_ids = [partner.id for partner in instance.partners.all()]
+        incoming_partner_ids = [item['id'] for item in partners_data if 'id' in item]
+
+        for partner_id in set(existing_partner_ids) - set(incoming_partner_ids):
+            Partner.objects.filter(id=partner_id).delete()
+
+        for partner_data in partners_data:
+            partner_id = partner_data.get('id', None)
+            name_partner_name = partner_data.pop('name_partner', None)
+            name_partner = PartnerClass.objects.get(name=name_partner_name) if name_partner_name else None
+
+            if partner_id:
+                partner = Partner.objects.get(id=partner_id, client=instance)
+                partner.name_partner = name_partner
+                for key, value in partner_data.items():
+                    setattr(partner, key, value)
+                partner.save()
+            else:
+                Partner.objects.create(client=instance, name_partner=name_partner, **partner_data)
+
+        # if related_clients_data:
+        #     related_client_ids = [Client.objects.get(id=client_id).id for client_id in related_clients_data]
+        #     instance.related_clients.set(related_client_ids)
 
         instance.save()
         return instance

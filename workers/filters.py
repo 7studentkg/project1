@@ -6,11 +6,19 @@ import django_filters
 class ClientFilter(django_filters.FilterSet):
     status = django_filters.CharFilter(field_name='status', lookup_expr='icontains', required=False)
     country = django_filters.CharFilter(field_name='country', lookup_expr='icontains', required=False)
+    partner = django_filters.CharFilter(method='filter_by_partner', required=False)
     name = django_filters.CharFilter(method='filter_by_name', required=False)
 
     class Meta:
         model = Client
-        fields = ['status', 'country', 'name']
+        fields = ['status', 'country', 'name', 'partner']
+
+    def filter_by_partner(self, queryset, name, value):
+        if not value:
+            return queryset
+
+        return queryset.filter(partners__name_partner__name__icontains=value) # сам еще не понял как это работает ...
+
 
     def filter_by_name(self, queryset, name, value):
         if not value:
