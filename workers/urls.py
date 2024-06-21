@@ -1,4 +1,4 @@
-from .views import DocumentViewSet, PaymentViewSet, RefundViewSet, ClientCreate, ClientList, ClientDetail
+from .views import DocumentViewSet, PaymentViewSet, RefundViewSet, ClientCreate, ClientList, ClientDetail, PartnersList
 from django.urls import path, include
 from signature.views import SignatureCreate, SignatureDetailView
 
@@ -38,6 +38,7 @@ refunds_detail = RefundViewSet.as_view({
 
 urlpatterns = [
     path('main/', ClientList.as_view(), name='main-page'),
+    path('partners/', PartnersList.as_view(), name='partners-list'),
     path('client_add/', ClientCreate.as_view(), name='client-add'),
     path('client/<int:id>/', ClientDetail.as_view(), name='client-detail'),
     path('client/<int:client_id>/documents/', documents_list, name='client-documents-list'),

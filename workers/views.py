@@ -1,7 +1,8 @@
-from .serializers import ClientSerializer, DocumentSerializer, PaymentSerializer, RefundSerializer, ClientListSerializer
+from .serializers import ( ClientSerializer, DocumentSerializer, PaymentSerializer,
+                          RefundSerializer, ClientListSerializer, PartnerClassSerializer )
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 from rest_framework.authentication import TokenAuthentication
-from .models import Client, Document, Payment, Refund, DocumentFile
+from .models import Client, Document, Payment, Refund, DocumentFile, PartnerClass
 from django_filters.rest_framework import DjangoFilterBackend
 from .authentication import CsrfExemptSessionAuthentication
 from rest_framework.pagination import PageNumberPagination
@@ -18,10 +19,28 @@ from rest_framework import status
 from django.http import FileResponse, Http404
 
 
+
+class PartnersList(ListAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = PartnerClass.objects.all()
+    serializer_class = PartnerClassSerializer
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        count = self.get_queryset().count()
+        return Response({
+            'count_partners': count,
+            'results': response.data
+        })
+
+
 class CustomPageNumberPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
+
+
 
     def get_paginated_response(self, data):
         total_pages = self.page.paginator.num_pages
