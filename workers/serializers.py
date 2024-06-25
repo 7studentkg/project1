@@ -1,4 +1,5 @@
-from .models import Client, Document, DocumentFile, Payment, Refund, Mother, Father, Contact, Child, Partner, PartnerClass
+from .models import ( Client, Document, DocumentFile, Payment, Refund, Mother,
+                      Father, Contact, Child, Partner, PartnerClass, PaymentFile, RefundFile)
 from rest_framework import serializers
 import json
 import mimetypes
@@ -78,42 +79,187 @@ class DocumentSerializer(serializers.ModelSerializer):
         return representation
 
 
+
+class PaymentFileSerializer(serializers.ModelSerializer):
+    file_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PaymentFile
+        fields = ('id', 'file', 'file_name')
+
+    def get_file_name(self, obj):
+        return obj.file.name.split('/')[-1]
+
+class RefundFileSerializer(serializers.ModelSerializer):
+    file_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = RefundFile
+        fields = ('id', 'file', 'file_name')
+
+    def get_file_name(self, obj):
+        return obj.file.name.split('/')[-1]
+
+
+
 class PaymentSerializer(serializers.ModelSerializer):
+    files = PaymentFileSerializer(many=True, read_only=True)
+    uploaded_files = serializers.ListField(
+        child=serializers.FileField(max_length=100000, allow_empty_file=False, use_url=False),
+        write_only=True,
+        required=False
+    )
+    delete_list = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
 
     class Meta:
         model = Payment
-        fields = ['id', 'amount', 'title', 'file_check', 'uploaded_at', 'last_modified']
+        fields = ['id', 'amount', 'title', 'files', 'uploaded_at', 'last_modified', 'uploaded_files', 'delete_list']
 
     def create(self, validated_data):
+        files_data = validated_data.pop('uploaded_files', [])
         client_id = self.context['view'].kwargs['client_id']
         client = Client.objects.get(id=client_id)
-        validated_data['client'] = client
-        return super().create(validated_data)
+        payment = Payment.objects.create(client=client, **validated_data)
+
+        if len(files_data) > 3:
+            raise serializers.ValidationError("You can only upload up to 3 files.")
+
+        for file in files_data:
+            payment_file = PaymentFile.objects.create(file=file)
+            payment.files.add(payment_file)
+        return payment
 
     def update(self, instance, validated_data):
+        files_data = validated_data.pop('uploaded_files', [])
+        delete_list = validated_data.pop('delete_list', [])
+
         instance.amount = validated_data.get('amount', instance.amount)
         instance.title = validated_data.get('title', instance.title)
-        instance.file_check = validated_data.get('file_check', instance.file_check)
         instance.save()
+
+        if len(instance.files.all()) + len(files_data) > 3:
+            raise serializers.ValidationError("You can only upload up to 3 files.")
+
+        for file in files_data:
+            payment_file = PaymentFile.objects.create(file=file)
+            instance.files.add(payment_file)
+
+        for file_id in delete_list:
+            file_instance = PaymentFile.objects.filter(id=file_id).first()
+            if file_instance:
+                instance.files.remove(file_instance)
+                file_instance.delete()
+
         return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['files'] = PaymentFileSerializer(instance.files.all(), many=True).data
+        return representation
 
 class RefundSerializer(serializers.ModelSerializer):
+    files = RefundFileSerializer(many=True, read_only=True)
+    uploaded_files = serializers.ListField(
+        child=serializers.FileField(max_length=100000, allow_empty_file=False, use_url=False),
+        write_only=True,
+        required=False
+    )
+    delete_list = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
+
     class Meta:
         model = Refund
-        fields = ['id', 'amount', 'title', 'file_check', 'uploaded_at', 'last_modified']
+        fields = ['id', 'amount', 'title', 'files', 'uploaded_at', 'last_modified', 'uploaded_files', 'delete_list']
 
     def create(self, validated_data):
+        files_data = validated_data.pop('uploaded_files', [])
         client_id = self.context['view'].kwargs['client_id']
         client = Client.objects.get(id=client_id)
-        validated_data['client'] = client
-        return super().create(validated_data)
+        refund = Refund.objects.create(client=client, **validated_data)
+
+        if len(files_data) > 3:
+            raise serializers.ValidationError("You can only upload up to 3 files.")
+
+        for file in files_data:
+            refund_file = RefundFile.objects.create(file=file)
+            refund.files.add(refund_file)
+
+        return refund
 
     def update(self, instance, validated_data):
+        files_data = validated_data.pop('uploaded_files', [])
+        delete_list = validated_data.pop('delete_list', [])
+
         instance.amount = validated_data.get('amount', instance.amount)
         instance.title = validated_data.get('title', instance.title)
-        instance.file_check = validated_data.get('file_check', instance.file_check)
         instance.save()
+
+        if len(instance.files.all()) + len(files_data) > 3:
+            raise serializers.ValidationError("You can only upload up to 3 files.")
+
+        for file in files_data:
+            refund_file = RefundFile.objects.create(file=file)
+            instance.files.add(refund_file)
+
+        for file_id in delete_list:
+            file_instance = RefundFile.objects.filter(id=file_id).first()
+            if file_instance:
+                instance.files.remove(file_instance)
+                file_instance.delete()
+
         return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['files'] = RefundFileSerializer(instance.files.all(), many=True).data
+        return representation
+
+
+
+
+# class PaymentSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model = Payment
+#         fields = ['id', 'amount', 'title', 'file_check', 'uploaded_at', 'last_modified']
+
+#     def create(self, validated_data):
+#         client_id = self.context['view'].kwargs['client_id']
+#         client = Client.objects.get(id=client_id)
+#         validated_data['client'] = client
+#         return super().create(validated_data)
+
+#     def update(self, instance, validated_data):
+#         instance.amount = validated_data.get('amount', instance.amount)
+#         instance.title = validated_data.get('title', instance.title)
+#         instance.file_check = validated_data.get('file_check', instance.file_check)
+#         instance.save()
+#         return instance
+
+# class RefundSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Refund
+#         fields = ['id', 'amount', 'title', 'file_check', 'uploaded_at', 'last_modified']
+
+#     def create(self, validated_data):
+#         client_id = self.context['view'].kwargs['client_id']
+#         client = Client.objects.get(id=client_id)
+#         validated_data['client'] = client
+#         return super().create(validated_data)
+
+#     def update(self, instance, validated_data):
+#         instance.amount = validated_data.get('amount', instance.amount)
+#         instance.title = validated_data.get('title', instance.title)
+#         instance.file_check = validated_data.get('file_check', instance.file_check)
+#         instance.save()
+#         return instance
 
 # class PaymentSerializer(serializers.ModelSerializer):
 #     class Meta:
@@ -214,6 +360,7 @@ class ClientSerializer(serializers.ModelSerializer):
     contact = ContactSerializer(required=False)
     children = ChildSerializer(many=True, required=False)
     partners = PartnerSerializer(many=True, required=False, read_only=True)
+    related_clients = serializers.PrimaryKeyRelatedField(queryset=Client.objects.all(), many=True, required=False)
 
 
 
@@ -224,7 +371,7 @@ class ClientSerializer(serializers.ModelSerializer):
                   'passportIssuingAuthority', 'email', 'password', 'height', 'weight', 'englishLevel',
                   'familyStatus', 'country', 'education', 'driving_licence', 'experience', 'partners',
                   'status', 'mother', 'father', 'contact', 'children', 'referal', 'workers', 'notes',
-                  'uploaded_at', 'last_modified' ]
+                  'uploaded_at', 'last_modified', 'related_clients' ]
 
         extra_kwargs = {
             'image': {'required': False}
@@ -241,7 +388,8 @@ class ClientSerializer(serializers.ModelSerializer):
         contact_data = self.initial_data.get('contact')
         children_data = self.initial_data.get('children', [])
         partners_data = self.initial_data.get('partners', [])
-        # related_clients_data = self.initial_data.get('related_clients', [])
+        related_clients_data = self.initial_data.get('related_clients', [])
+        related_clients_data = validated_data.pop('related_clients', [])
 
 
         if isinstance(mother_data, str):
@@ -255,13 +403,6 @@ class ClientSerializer(serializers.ModelSerializer):
 
         if isinstance(partners_data, str):
             partners_data = json.loads(partners_data)
-
-        # if isinstance(related_clients_data, str):
-        #     related_clients_data = [int(related_clients_data)]
-
-
-        # validated_data.pop('related_clients', None)
-        # related_clients_data = [int(client_id) for client_id in related_clients_data]
 
 
         client = Client.objects.create(**validated_data)
@@ -283,10 +424,8 @@ class ClientSerializer(serializers.ModelSerializer):
             Partner.objects.create(client=client, name_partner=name_partner, **partner_data)
 
 
-
-        # if related_clients_data:
-        #     related_clients = [Client.objects.get(id=client_id) for client_id in related_clients_data]
-        #     client.related_clients.set(related_clients)
+        if related_clients_data:
+            client.related_clients.set(related_clients_data)
 
         return client
 
@@ -296,7 +435,7 @@ class ClientSerializer(serializers.ModelSerializer):
         contact_data = self.initial_data.get('contact', None)
         children_data = self.initial_data.get('children', [])
         partners_data = self.initial_data.get('partners', [])
-        # related_clients_data = self.initial_data.get('related_clients', [])
+        related_clients_data = validated_data.pop('related_clients', None)
 
 
 
@@ -361,9 +500,8 @@ class ClientSerializer(serializers.ModelSerializer):
             else:
                 Partner.objects.create(client=instance, name_partner=name_partner, **partner_data)
 
-        # if related_clients_data:
-        #     related_client_ids = [Client.objects.get(id=client_id).id for client_id in related_clients_data]
-        #     instance.related_clients.set(related_client_ids)
+        if related_clients_data is not None:
+            instance.related_clients.set(related_clients_data)
 
         instance.save()
         return instance

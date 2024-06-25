@@ -89,7 +89,7 @@ class Client(models.Model):
     workers = models.CharField(max_length=300, verbose_name="Специалист")
 
     notes = models.TextField(blank=True, verbose_name="Заметки")
-    # related_clients = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='related_to')
+    related_clients = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='related_to')
 
 
     uploaded_at = models.DateTimeField(auto_now_add=True) # ДАТА ДОБАВЛЕНИЯ
@@ -170,7 +170,7 @@ class Contact(models.Model):
 
 
 class DocumentFile(models.Model):
-    file = models.FileField(upload_to='client_documents/%Y/%m/%d/', max_length=255, blank=True)
+    file = models.FileField(upload_to='client_documents/%Y/%m/%d/', max_length=300, blank=True)
 
     def __str__(self):
         return self.file.name
@@ -191,6 +191,17 @@ class Document(models.Model):
         verbose_name_plural = "Документы"
 
 
+class PaymentFile(models.Model):
+    file = models.FileField(upload_to='client_payment_files', max_length=300, blank=True)
+
+    def __str__(self):
+        return self.file.name
+
+class RefundFile(models.Model):
+    file = models.FileField(upload_to='client_refund_files', max_length=300, blank=True)
+
+    def __str__(self):
+        return self.file.name
 
 
 
@@ -198,7 +209,7 @@ class Payment(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='payment')
     title = models.TextField(verbose_name="Описание оплаты", blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма", blank=True)
-    file_check = models.FileField(upload_to='client_payment_check', verbose_name="Чек", max_length=300, blank=True)
+    files = models.ManyToManyField(PaymentFile, related_name='payment_files', verbose_name="Файлы оплаты")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 
@@ -212,7 +223,7 @@ class Refund(models.Model):
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='refund')
     title = models.TextField(verbose_name="Описание возврата", blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Сумма", blank=True)
-    file_check = models.FileField(upload_to='client_refund_check', verbose_name="Чек", max_length=300, blank=True)
+    files = models.ManyToManyField(RefundFile, related_name='refund_files', verbose_name="Файлы возврата")
     uploaded_at = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
 

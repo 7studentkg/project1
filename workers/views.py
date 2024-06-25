@@ -2,7 +2,7 @@ from .serializers import ( ClientSerializer, DocumentSerializer, PaymentSerializ
                           RefundSerializer, ClientListSerializer, PartnerClassSerializer )
 from rest_framework.generics import  CreateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView
 from rest_framework.authentication import TokenAuthentication
-from .models import Client, Document, Payment, Refund, DocumentFile, PartnerClass
+from .models import Client, Document, Payment, Refund, DocumentFile, PartnerClass, PaymentFile, RefundFile
 from django_filters.rest_framework import DjangoFilterBackend
 from .authentication import CsrfExemptSessionAuthentication
 from rest_framework.pagination import PageNumberPagination
@@ -53,8 +53,8 @@ class CustomPageNumberPagination(PageNumberPagination):
 
 # GET
 class ClientList(ListAPIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientListSerializer
     pagination_class = CustomPageNumberPagination
@@ -77,8 +77,8 @@ class ClientList(ListAPIView):
 # POST
 
 class ClientCreate(CreateAPIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
 
@@ -98,8 +98,8 @@ class ClientCreate(CreateAPIView):
 
 # GET / UPDATE / DELETE
 class ClientDetail(RetrieveUpdateDestroyAPIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
     lookup_field = 'id'
@@ -238,6 +238,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
 
     def get_queryset(self):
@@ -247,6 +248,21 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         client_id = self.kwargs['client_id']
         serializer.save(client_id=client_id)
+
+    @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
+    def download_file(self, request, client_id=None, pk=None, file_id=None):
+        try:
+            payment = self.get_object()
+            file_instance = payment.files.get(id=file_id)
+
+            response = FileResponse(file_instance.file.open(), as_attachment=True, filename=file_instance.file.name)
+            return response
+
+        except PaymentFile.DoesNotExist:
+            raise Http404("File not found")
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def create(self, request, *args, **kwargs):
         try:
@@ -292,6 +308,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class RefundViewSet(viewsets.ModelViewSet):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    queryset = Refund.objects.all()
     serializer_class = RefundSerializer
 
     def get_queryset(self):
@@ -301,6 +318,22 @@ class RefundViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         client_id = self.kwargs['client_id']
         serializer.save(client_id=client_id)
+
+
+    @action(detail=True, methods=['get'], url_path='files/(?P<file_id>\d+)/download')
+    def download_file(self, request, client_id=None, pk=None, file_id=None):
+        try:
+            refund = self.get_object()
+            file_instance = refund.files.get(id=file_id)
+
+            response = FileResponse(file_instance.file.open(), as_attachment=True, filename=file_instance.file.name)
+            return response
+
+        except RefundFile.DoesNotExist:
+            raise Http404("File not found")
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def create(self, request, *args, **kwargs):
         try:
